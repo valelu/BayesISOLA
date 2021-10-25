@@ -19,7 +19,7 @@ def imgpath(img, img2, html):
 		return os.path.relpath(img2, d)
 	return None
 
-def html_log(self, outfile='$outdir/index.html', reference=None, h1='ISOLA-ObsPy automated solution', backlink=False, plot_MT='auto', plot_uncertainty='auto', plot_stations='auto', plot_seismo_cova='auto', plot_seismo_sharey='auto', mouse_figures=None, plot_spectra='auto', plot_noise='auto', plot_covariance_function='auto', plot_covariance_matrix='auto', plot_maps='auto', plot_slices='auto', plot_maps_sum='auto'):
+def html_log(self, outfile='$outdir/index.html', reference=None, h1='ISOLA-ObsPy automated solution', backlink=False, plot_MT='auto', plot_uncertainty='auto', plot_stations='auto', plot_seismo_cova='auto', plot_seismo_sharey='auto',plot_seismo='auto', mouse_figures=None, plot_spectra='auto', plot_noise='auto', plot_covariance_function='auto', plot_covariance_matrix='auto', plot_maps='auto', plot_slices='auto', plot_maps_sum='auto'):
 	"""
 	Generates an HTML page containing informations about the calculation and the result together with figures
 	
@@ -64,6 +64,7 @@ def html_log(self, outfile='$outdir/index.html', reference=None, h1='ISOLA-ObsPy
 	plot_stations = imgpath(plot_stations, plots['stations'], outfile)
 	plot_seismo_cova = imgpath(plot_seismo_cova, plots['seismo_cova'], outfile)
 	plot_seismo_sharey = imgpath(plot_seismo_sharey, plots['seismo_sharey'], outfile)
+	plot_seismo = imgpath(plot_seismo, plots['seismo'], outfile)
 	plot_spectra = imgpath(plot_spectra, plots['spectra'], outfile)
 	plot_noise = imgpath(plot_noise, plots['noise'], outfile)
 	plot_covariance_function = imgpath(plot_covariance_function, plots['covariance_function'], outfile)
@@ -451,6 +452,17 @@ def html_log(self, outfile='$outdir/index.html', reference=None, h1='ISOLA-ObsPy
   </div>
 </div>
 '''.format(plot_seismo_sharey))
+	if plot_seismo:
+		out.write('''
+<div class="thumb tleft">
+  <a href="{0:s}" data-lightbox="seismo" data-title="waveform fit: original data">
+    <img alt="" src="{0:s}" height="150" class="thumbimage" />
+  </a>
+  <div class="thumbcaption">
+    waveform fit <br />(non-filtered)
+  </div>
+</div>
+'''.format(plot_seismo))
 	if plot_spectra:
 		out.write('''
 <div class="thumb tleft">
