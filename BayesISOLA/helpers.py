@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
-import fractions
+#import fractions
 
 def rename_keys(somedict, prefix='', suffix=''):
 	"""
@@ -17,6 +17,7 @@ def rename_keys(somedict, prefix='', suffix=''):
 	"""
 	return dict(map(lambda key, value: (prefix+str(key)+suffix, value), somedict.items()))
 
+
 def next_power_of_2(n):
 	"""
 	Return next power of 2 greater than or equal to ``n``
@@ -24,6 +25,7 @@ def next_power_of_2(n):
 	:type n: integer
 	"""
 	return 2**(n-1).bit_length()
+
 
 def lcmm(b, *args):
 	"""
@@ -33,6 +35,7 @@ def lcmm(b, *args):
 	:type b,args: float, which is a multiple of 0.00033333
 	:returns: the least multiple of ``a`` and ``b``
 	"""
+	from math import gcd #LVLV
 	b = 3/b
 	if b - round(b) < 1e6:
 		b = round(b)
@@ -40,18 +43,24 @@ def lcmm(b, *args):
 		a = 3/a
 		if a - round(a) < 1e6:
 			a = round(a)
-		b = fractions.gcd(a, b)
+		#b = fractions.gcd(a, b) !DEPRECATED
+		b = gcd(a, b) #LVLV
 	return 3/b
+
 
 def my_filter(data, fmin, fmax):
 	"""
 	Filter used for filtering both elementary and observed seismograms
 	"""
-	if fmax:
-		data.filter('lowpass', freq=fmax)
-	if fmin:
-		data.filter('highpass', freq=fmin, corners=2)
-		data.filter('highpass', freq=fmin, corners=2)
+	if fmin and fmax:
+		data.filter('bandpass',freqmin=fmin,freqmax=fmax,corners=4)
+	else:
+		if fmax:
+			data.filter('lowpass', freq=fmax)
+		if fmin:
+			data.filter('highpass', freq=fmin, corners=4)
+		#data.filter('highpass', freq=fmin, corners=2)
+
 
 def decimate(a, n=2):
 	"""

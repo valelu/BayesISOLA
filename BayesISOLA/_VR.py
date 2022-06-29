@@ -2,8 +2,9 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
+import obspy
 from obspy import UTCDateTime
-
+from obspy.geodetics.base import gps2dist_azimuth	
 from BayesISOLA.fileformats import read_elemse
 from BayesISOLA.helpers import my_filter
 
@@ -72,10 +73,28 @@ def VR_of_components(self, n=1):
 				VR_sum = 1 - MISFIT / NORM_D
 				COMPS_USED += 1
 				#print sta, comp, VR, VR_sum # DEBUG
+
 		if COMPS_USED >= n:
 			if COMPS_USED > 1:
 				self.VRcomp[COMPS_USED] = VR_sum
 			if VR_sum >= max_VR:
 				max_VR = VR_sum
 				self.max_VR = (VR_sum, COMPS_USED)
+	write_VR_by_comp(self)
 	return max_VR
+
+def write_VR_by_comp(self):
+     #recalculate distance
+    for r in range(self.inp.nr):
+        if obspy.__version__[0] == '0':
+               az,baz,dist=g.inv(self.centroid['lon'],self.centroid['lat'],self.inp.stations[r]['lon'],self.inp.stations[r]['lat'])
+        else:
+               dist,az,baz=gps2dist_azimuth(self.centroid['lat'],self.centroid['lon'],self.inp.stations[r]['lat'],self.inp.stations[r]['lon']) 
+        self.inp.stations[r]['dist2']=dist
+     #write output
+     #station code, distance, VR_Z,VR_N,VR_E
+    wrf=open(self.inp.outdir+'/VR_by_comp.dat','w')
+    wrf.write('Station \t distance \t VR_Z \t VR_N \t VR_E \n')
+    for r in range(self.inp.nr):
+        wrf.write('{0:s}:{1:s}  {2:10.1f}  {3:5.0f}%  {4:5.0f}%  {5:5.0f}% \n'.format(self.inp.stations[r]['network'],self.inp.stations[r]['code'],self.inp.stations[r]['dist2']/1000.,self.inp.stations[r]['VR_Z']*100,self.inp.stations[r]['VR_N']*100,self.inp.stations[r]['VR_E']*100))
+    wrf.close()
