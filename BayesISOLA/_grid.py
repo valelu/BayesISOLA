@@ -3,7 +3,6 @@
 
 import math
 import numpy as np
-import string
 
 def set_grid(self, min_depth=1000):
 	"""
@@ -18,10 +17,7 @@ def set_grid(self, min_depth=1000):
 	:type min_depth: float, optional
 	"""
 	step_x = self.step_x; step_z = self.step_z; max_points = self.max_points
-	if self.add_rupture_length:
-		rupture_length = self.data.rupture_length
-	else:
-		rupture_length = 0
+	rupture_length = self.data.rupture_length
 	if self.grid_radius:
 		self.radius = radius = self.grid_radius
 	else:
@@ -45,9 +41,6 @@ def set_grid(self, min_depth=1000):
 		z = self.data.event['depth']+k*step_z
 		if z >= depth_min and z <= depth_max:
 			depths.append(z)
-	alphabet_string = string.ascii_uppercase
-	numbers = np.arange(1, max(2*n_steps+2, len(depths)+1), 1)
-	numbers_str = str(numbers)[1:-1].split()
 	self.grid = []
 	self.steps_x = []
 	for i in range(-n_steps, n_steps+1):
@@ -59,12 +52,10 @@ def set_grid(self, min_depth=1000):
 				continue
 			for z in depths:
 				edge = z==depths[0] or z==depths[-1] or (math.sqrt((abs(x)+step_x)**2+y**2) > radius or math.sqrt((abs(y)+step_x)**2+x**2) > radius) and self.circle_shape or max(abs(i),abs(j))==n_steps
-				self.grid.append({'x':x, 'y':y, 'z':z, 'err':0, 'edge':edge,
-					 'x_id':alphabet_string[n_steps+i], 'y_id':numbers_str[n_steps+j], 'z_id':numbers_str[depths.index(z)], 'path':None})
-				
+				self.grid.append({'x':x, 'y':y, 'z':z, 'err':0, 'edge':edge})
 	self.depths = depths
 	self.step_x = step_x; self.step_z = step_z
-	self.data.log('\nGrid parameters:\n  number of points: {0:4d}\n  horizontal step: {1:5.0f} m\n  vertical step: {2:5.0f} m\n  grid radius: {3:6.3f} km\n  minimal depth: {4:6.3f} km\n  maximal depth: {5:6.3f} km\nEstimated rupture length: {6:6.3f} km'.format(len(self.grid), step_x, step_z, radius/1e3, depth_min/1e3, depth_max/1e3, self.data.rupture_length/1e3))
+	self.data.log('\nGrid parameters:\n  number of points: {0:4d}\n  horizontal step: {1:5.0f} m\n  vertical step: {2:5.0f} m\n  grid radius: {3:6.3f} km\n  minimal depth: {4:6.3f} km\n  maximal depth: {5:6.3f} km\nEstimated rupture length: {6:6.3f} km'.format(len(self.grid), step_x, step_z, radius/1e3, depth_min/1e3, depth_max/1e3, rupture_length/1e3))
 
 def set_time_grid(self, fmax, max_samprate):
 	"""
@@ -82,7 +73,7 @@ def set_time_grid(self, fmax, max_samprate):
 	if self.grid_min_time:
 		self.shift_min  = shift_min  = self.grid_min_time
 	else:
-		self.shift_min  = shift_min  = -self.time_unc
+		self.shift_min  = shift_min  = -self.time_unc- self.data.rupture_duration/2.
 	self.shift_step = shift_step = 1./fmax * 0.01
 	self.SHIFT_min = int(round(shift_min*max_samprate))
 	self.SHIFT_max = int(round(shift_max*max_samprate))

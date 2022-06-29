@@ -47,12 +47,12 @@ def run_inversion(self):
 	
 	if self.threads > 1: # parallel
 		pool = mp.Pool(processes=self.threads)
-		results = [pool.apply_async(invert, args=(grid[i]['id'], d_shifts, norm_d, Cd_inv, Cd_inv_shifts, self.inp.nr, self.d.components, self.inp.stations, self.d.npts_elemse, self.d.npts_slice, self.d.elemse_start_origin, self.inp.event['t'], self.deviatoric, self.decompose, self.d.invert_displacement, grid[i]['path'])) for i in todo]
+		results = [pool.apply_async(invert, args=(grid[i]['id'], d_shifts, norm_d, Cd_inv, Cd_inv_shifts, self.inp.nr, self.d.components, self.inp.stations, self.d.npts_elemse, self.d.npts_slice, self.d.elemse_start_origin, self.deviatoric, self.decompose, self.d.invert_displacement)) for i in todo]
 		output = [p.get() for p in results]
 	else: # serial
 		output = []
 		for i in todo:
-			res = invert(grid[i]['id'], d_shifts, norm_d, Cd_inv, Cd_inv_shifts, self.inp.nr, self.d.components, self.inp.stations, self.d.npts_elemse, self.d.npts_slice, self.d.elemse_start_origin, self.inp.event['t'], self.deviatoric, self.decompose, self.d.invert_displacement, grid[i]['path'])
+			res = invert(grid[i]['id'], d_shifts, norm_d, Cd_inv, Cd_inv_shifts, self.inp.nr, self.d.components, self.inp.stations, self.d.npts_elemse, self.d.npts_slice, self.d.elemse_start_origin, self.deviatoric, self.decompose, self.d.invert_displacement)
 			output.append(res)
 	min_misfit = output[0]['misfit']
 	for i in todo:
@@ -67,10 +67,7 @@ def run_inversion(self):
 		gp['sum_c'] = 0
 		for idx in gp['shifts']:
 			GP = gp['shifts'][idx]
-			if gp['det_Ca'] == np.inf:
-				GP['c'] = 0
-			else:
-				GP['c'] = np.sqrt(gp['det_Ca']) * np.exp(-0.5 * (GP['misfit']-min_misfit))
+			GP['c'] = np.sqrt(gp['det_Ca']) * np.exp(-0.5 * (GP['misfit']-min_misfit))
 			gp['sum_c'] += GP['c']
 		gp['c'] = gp['shifts'][gp['shift_idx']]['c']
 		self.sum_c += gp['sum_c']

@@ -1,5 +1,3 @@
-#! /usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 import numpy as np
 import scipy.interpolate
@@ -58,7 +56,8 @@ def plot_maps(self, outfile='$outdir/map.png', beachball_size_c=False):
 			filename = outfile[:k] + "_{0:0>5.0f}".format(z) + outfile[k:]
 		else:
 			filename = None
-		self.plot_map_backend(x, y, s, CN, MT, color, width, highlight, -r, r, -r, r, xlabel='west - east [km]', ylabel='south - north [km]', title='depth {0:5.2f} km'.format(z/1000), beachball_size_c=beachball_size_c, outfile=filename)
+		if len(x)>0 and len(y)>0:
+			self.plot_map_backend(x, y, s, CN, MT, color, width, highlight, -r, r, -r, r, xlabel='west - east [km]', ylabel='south - north [km]', title='depth {0:5.2f} km'.format(z/1000), beachball_size_c=beachball_size_c, outfile=filename)
 
 def plot_slices(self, outfile='$outdir/slice.png', point=None, beachball_size_c=False):
 	"""
@@ -128,7 +127,7 @@ def plot_maps_sum(self, outfile='$outdir/map_sum.png'):
 	
 	The legend and properties of the function are similar as at function :func:`plot_maps`.
 	"""
-	if not self.cova.Cd_inv:
+	if not self.cova.Cd_inv or not self.cova.Cd_inv_shifts:
 		return False # if the data covariance matrix is unitary, we have no estimation of data errors, so the PDF has good sense
 	outfile = outfile.replace('$outdir', self.outdir)
 	self.plots['maps_sum'] = outfile

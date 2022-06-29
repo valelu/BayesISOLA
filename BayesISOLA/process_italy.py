@@ -79,9 +79,10 @@ class process_italy:
 
 	from BayesISOLA._green import set_Greens_parameters, write_Greens_parameters, verify_Greens_parameters, verify_Greens_headers, calculate_or_verify_Green, calculate_Green
 	from BayesISOLA._parameters import set_frequencies, set_working_sampling, count_components, min_time, max_time, set_time_window, set_parameters, skip_short_records
-	from BayesISOLA._process_italy import filter_ita_data, trim_ita_data, prefilter_data, decimate2_shift
+	from BayesISOLA._process_italy import filter_ita_data, trim_ita_data, prefilter_data, decimate2_shift, skip_short_records2,write_stainfo
+	from BayesISOLA._mouse_susp import suspect_mouse
 
-	def __init__(self, data, grid, s_velocity=3000, threads=2, invert_displacement=True, use_precalculated_Green=True, correct_data=False, set_parameters=True, fmax=.1, fmin=0.01, min_depth=1000., skip_short_records=True, calculate_or_verify_Green=True, trim_filter_data=True, decimate_shift=True):
+	def __init__(self, data, grid, s_velocity=3000, threads=2, invert_displacement=True, use_precalculated_Green=True, correct_data=False, set_parameters=True, fmax=.1, fmin=0.01, min_depth=1000., multichannel=True, skip_short_records=True, suspect_mouse=False,calculate_or_verify_Green=True, trim_filter_data=True, decimate_shift=True,use_stainfo=False):
 		self.d = data
 		self.grid = grid
 		self.s_velocity = s_velocity
@@ -97,16 +98,21 @@ class process_italy:
 		self.idx_weight = {0:'weightZ', 1:'weightN', 2:'weightE'}
 		
 		if set_parameters:
-			self.set_parameters(fmax, fmin, min_depth)
+			self.set_parameters(fmax=fmax, fmin=fmin, min_depth=min_depth,multichannel=multichannel)
 		if not skip_short_records is False:
-			self.skip_short_records(noise=True)
-		if calculate_or_verify_Green:
-			self.calculate_or_verify_Green()
+			self.skip_short_records2(noise=False)
+		if suspect_mouse:
+		        self.d.suspect_mouse(figures=self.d.outdir+"/mouse",multichannel=multichannel)
+		if use_stainfo:
+		        self.write_stainfo()                  
+		self.count_components(log=True)
 		if trim_filter_data:
 			self.trim_ita_data()
 			self.filter_ita_data()
 		if decimate_shift:
 			self.decimate2_shift()
+		if calculate_or_verify_Green:
+			self.calculate_or_verify_Green()
 
 	def __exit__(self, exc_type, exc_value, traceback):
 		self.__del__()

@@ -87,15 +87,19 @@ def plot_covariance_matrix(self, outfile='$outdir/covariance_matrix.png', normal
 	if fontsize:
 		plt.rcParams.update({'font.size': fontsize})
 	Cd = np.zeros((self.data.components*self.data.npts_slice, self.data.components*self.data.npts_slice))
-	if not len(self.cova.Cd):
+	if not len(self.cova.Cd) and not len(self.cova.Cd_shifts):
 		raise ValueError('Covariance matrix not set or not saved. Run "covariance_matrix(save_non_inverted=True)" first.')
-	i = 0
-	if cholesky and self.cova.LT3:
-		matrix = self.cova.LT3
-	elif cholesky:
-		matrix = [item for sublist in self.cova.LT for item in sublist]
+	if not len(self.cova.Cd_shifts): 
+	    if cholesky and self.cova.LT3:
+	        matrix = self.cova.LT3
+	    elif cholesky:
+	        matrix = [item for sublist in self.cova.LT for item in sublist]
+	    else:
+	        matrix = self.cova.Cd
 	else:
-		matrix = self.cova.Cd
+	    if self.cova.LT_shifts:
+	        matrix = [item for sublist in self.cova.LT_shifts[self.MT.centroid['shift_idx']] for item in sublist]
+	i = 0
 	for C in matrix:
 		if type(C)==int:
 			continue
