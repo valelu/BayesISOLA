@@ -53,15 +53,15 @@ def plot_seismo(self, outfile='$outdir/seismo.png', comp_order='ZNE', cholesky=F
 	:param sharey: if ``True`` the y-axes for all stations have the same limits, otherwise the limits are chosen automatically for every station
 	:type sharey: bool, optional
 	"""
-	if cholesky and not len(self.cova.LT) and not len(self.cova.LT3):
+	if cholesky and not len(self.cova.LT) and not len(self.cova.LT3) and not len(self.cova.LT_shifts):
 		raise ValueError('Covariance matrix not set. Run "covariance_matrix()" first.')
 	data = self.data.data_shifts[self.MT.centroid['shift_idx']]
 	npts = self.data.npts_slice
 	samprate = self.data.samprate
 	if self.MT.centroid['path']:
-		elemse = read_elemse_from_files(self.inp.nr, self.MT.centroid['path'], self.inp.stations, self.inp.event['t'], self.data.invert_displacement)
+	    elemse = read_elemse_from_files(self.inp.nr, self.MT.centroid['path'], self.inp.stations, self.inp.event['t'], self.data.invert_displacement)
 	else:
-		elemse = read_elemse(self.inp.nr, self.data.npts_elemse, 'green/elemse'+self.MT.centroid['id']+'.dat', self.inp.stations, self.data.invert_displacement)
+	    elemse = read_elemse(self.inp.nr, self.data.npts_elemse, 'green/elemse'+self.MT.centroid['id']+'.dat', self.inp.stations, self.data.invert_displacement) 
 	#if not no_filter:
 	for r in range(self.inp.nr):
 		for e in range(6):
@@ -97,7 +97,10 @@ def plot_seismo(self, outfile='$outdir/seismo.png', comp_order='ZNE', cholesky=F
 					#if i+SHIFT >= 0:	
 						#D[i] = self.data_unfiltered[sta][comp].data[i+SHIFT]
 			#else:
-			d = data[sta][comp][0:len(t)]
+			try: 
+ 			   d = data[sta][comp][0:len(t)]
+			except IndexError:
+ 			   d = np.zeros(len(t))
 			if cholesky and self.inp.stations[sta][{0:'useZ', 1:'useN', 2:'useE'}[comp]]:
 				if self.cova.LT3:
 					#print(r, comp) # DEBUG
@@ -112,6 +115,9 @@ def plot_seismo(self, outfile='$outdir/seismo.png', comp_order='ZNE', cholesky=F
 						#print(self.cova.LT3[sta][y1:y2, x1:x2].shape, data[sta][COMP].data[0:npts].shape) # DEBUG
 						d    += np.dot(self.cova.LT3[sta][y1:y2, x1:x2], data[sta][COMP].data[0:npts])
 						synt += np.dot(self.cova.LT3[sta][y1:y2, x1:x2], SYNT[COMP])
+				elif self.cova.LT_shifts:
+				    d=np.dot(self.cova.LT_shifts[self.MT.centroid['shift_idx']][sta][comp],d)
+				    synt=np.dot(self.cova.LT_shifts[self.MT.centroid['shift_idx']][sta][comp],synt)
 				else:
 					d    = np.dot(self.cova.LT[sta][comp], d)
 					synt = np.dot(self.cova.LT[sta][comp], synt)

@@ -8,7 +8,7 @@ from BayesISOLA.helpers import my_filter
 def filter_ita_data(self):
    
    #in itaca
-    for st in self.data:    
+    for st in self.data:
         st.detrend('linear')
         for tr in st:
             tr.data=tr.data-tr.data[0]
@@ -76,10 +76,10 @@ def trim_ita_data(self, noise_slice=False, noise_starttime=None, noise_length=No
 				self.noise[-1].decimate(int(decimate*DECIMATE/2), no_filter=True) # noise has 2-times higher sampling than data
 		self.prefilter_data(st)
 		st.decimate(decimate, no_filter=True)
-		st.trim(starttime, endtime)
+		st.trim(starttime, endtime,pad=True,fill_value=0)
+#		print('Warning: allowing for zero fill value in trimming, check log for possible trim problems!')
 			#print(stats.station,stats.starttime,stats['endtime'],endtime)
 		# TODO: kontrola, jestli neorezavame mimo puvodni zaznam
-
 
 def prefilter_data(self, st):
 	"""
@@ -145,3 +145,78 @@ def decimate2_shift(self):
 					c += 1
 		self.d_shifts.append(d_shift)
 
+
+def skip_short_records2(self, v0=1000.,check_start=False,noise=False):
+    """
+	Checks whether all records are long enough for the inversion and skips unsuitable ones.
+	
+	:parameter noise: checks also whether the record is long enough for generating the noise slice for the covariance matrix (if the value is ``True``, choose minimal noise length automatically; if it's numerical, take the value as minimal noise length)
+	:type noise: bool or float, optional
+    """
+    self.log('\nChecking record length:')
+    qq=False
+    for st in self.d.data:
+        for comp in range(len(st)):
+            stats = st[comp].stats
+            if check_start:
+                if stats.starttime > self.d.event['t'] + (self.t_min + self.grid.shift_min):
+                    self.log('  ' + stats.station + ' ' + stats.channel + ': record too soon, ignoring component in inversion')
+                    self.d.stations_index['_'.join([stats.network, stats.station, stats.location, stats.channel[0:2]])]['use'+stats.channel[2]] = False
+            #use distance/v for each station to estimate the assumed record length
+            dst=self.d.stations_index['_'.join([stats.network, stats.station, stats.location, stats.channel[0:2]])]['dist']
+            tmax=np.sqrt(dst**2+self.grid.depth_max**2)/v0*0.8
+            if stats.endtime < self.d.event['t'] + (tmax + self.grid.shift_max):
+                    self.log('  ' + stats.station + ' ' + stats.channel + ': record too short, ignoring component in inversion')
+                    self.d.stations_index['_'.join([stats.network, stats.station, stats.location, stats.channel[0:2]])]['use'+stats.channel[2]] = False
+	    #check the record whether it will be trimmed correctly 
+            endtime = self.d.event['t']+tmax/0.8+ self.grid.shift_max + 10
+            if stats.starttime>endtime:
+                    self.d.stations_index['_'.join([stats.network, stats.station, stats.location, stats.channel[0:2]])]['use'+stats.channel[2]] = False
+                    self.log('  ' + stats.station + ' ' + stats.channel + ': record too late and will be trimmed completely')
+                    qq=True
+            if noise:
+                if type(noise) in (float,int):
+                    noise_len = noise
+                else:
+                    noise_len = (self.t_max - self.t_min + self.grid.shift_max + 10)*1.1 - self.grid.shift_min - self.t_min
+					#print stats.station, stats.channel, noise_len, '>', self.d.event['t']-stats.starttime # DEBUG
+                if stats.starttime > self.d.event['t'] - noise_len:
+                    self.log('  ' + stats.station + ' ' + stats.channel + ': record too short for noise covariance, ignoring component in inversion')
+                    self.d.stations_index['_'.join([stats.network, stats.station, stats.location, stats.channel[0:2]])]['use'+stats.channel[2]] = False
+    if qq:
+        print('Nejaky blazon to tu poorezaval az moc divne...Check log and contact your data provider')
+#        quit()
+
+
+def write_stainfo(self):
+        import os
+        if os.path.exists('stainfo.dat'):
+           #if exists, read
+              ff=open('stainfo.dat','r')
+              lines=ff.readlines()
+              ff.close()
+              #check if the file agrees:
+              stk1=[];stk2=[]
+              for i in range(min(len(lines),len(self.d.stations))):
+                  stn=self.d.stations[i]
+                  line=lines[i]
+                  stk1.append(line.split()[-1])
+                  stk2.append('_'.join([stn['network'], stn['code'], stn['location'], stn['channelcode']]))
+              if np.all(stk1==stk2) and len(lines)==len(self.d.stations):
+               for line in lines:
+                  items = line.split()
+                  stkey=items[-1]
+                  stn=self.d.stations_index[stkey]
+                  stn['useZ'],stn['useN'],stn['useE'] = [bool(int(items[i])) for i in range(3)]
+                  stn['weightZ'],stn['weightN'],stn['weightE']= [float(items[i]) for i in range(3,6)]
+               return
+              else:
+                  print('Station key does not agree for the stainfo file. New stainfo will be created')
+        else:
+           print('Stainfo file does not exist. New file will be written')
+        ff=open('stainfo.dat','w')
+        for stn in self.d.stations:
+           stkey='_'.join([stn['network'], stn['code'], stn['location'], stn['channelcode']])
+           ff.write('{} {} {} {} {} {} {} {}\n'.format(int(stn['useZ']),int(stn['useN']),int(stn['useE']),stn['weightZ'],stn['weightN'],stn['weightE'],0,stkey))
+        ff.close()
+#    for stn in self.stations:
