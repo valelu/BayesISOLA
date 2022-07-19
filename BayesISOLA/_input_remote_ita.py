@@ -41,7 +41,6 @@ def load_from_esm(self,eventID,tokenfile='token.txt',min_distance=None,max_dista
             raise Exception('Tokenfile does not exist and no user credentials were given.Input either path to file with token or user_email+user_passowrd!')
         else:
             dat='{"user_email":"'+user_email+'", "user_password":"'+user_password+'"}'
-#data=parse.urlencode({"message":'{"user_email":"admin.isola@ingv.it","user_password":"oflodor"}'}).encode()
             data=parse.urlencode({"message":dat}).encode()
             url="https://esm-db.eu/esmws/generate-signed-message/1/query"
             resp=urlopen(url,data=data)# urlretrieve(url,data=data,filename='token.txt')
