@@ -14,7 +14,7 @@ def imgpath(img, img2, html):
 	"""
 	if img and img != 'auto':
 		return img
-	if img2:
+	if img2: #img=='auto' and img2:
 		d = os.path.dirname(html)
 		return os.path.relpath(img2, d)
 	return None
@@ -104,7 +104,7 @@ def html_log(self, outfile='$outdir/index.html', reference=None, h1='ISOLA-ObsPy
 		' components)<br />\n    ' + 
 		{1:'with the <strong>data covariance matrix</strong> based on real noise', 0:'without the covariance matrix'}[bool(self.cova.Cd_inv)] + 
 		{1:'<br />\n    with <strong>crosscovariance</strong> between components', 0:''}[bool(self.cova.LT3)] + 
-		'.</dd>\n  <dt>Reference</dt>\n  <dd>Vackář, Gallovič, Burjánek, Zahradník, and Clinton. Bayesian ISOLA: new tool for automated centroid moment tensor inversion, <em>in preparation</em>, <a href="http://geo.mff.cuni.cz/~vackar/papers/isola-obspy.pdf">PDF</a></dd>\n</dl>\n\n')
+		'.</dd>\n  <dt>Reference</dt>\n  <dd>Vackář, Gallovič, Burjánek, Zahradník, and Clinton (2017). Bayesian ISOLA: new tool for automated centroid moment tensor inversion, <em>Geophysical Journal International, 210 (2), 693-705</em>,<a href="https://academic.oup.com/gji/article/210/2/693/3747443"> https://doi.org/10.1093/gji/ggx158</a> <a href="http://geo.mff.cuni.cz/~vackar/papers/isola-obspy.pdf"> PDF.</a></dd>\n</dl>\n\n')
 	out.write(textwrap.dedent('''\
 		<h2>Hypocenter location</h2>
 		
@@ -418,18 +418,6 @@ def html_log(self, outfile='$outdir/index.html', reference=None, h1='ISOLA-ObsPy
 		s = s.replace('\t', '</td>\t<td>').replace('\n', '</td></tr>\n<tr><td>')[:-8]
 		s = '<tr><td>' + s + '</table>\n\n'
 		out.write(s)
-	if 'mouse' in self.logtext:
-		out.write('<h3>Mouse detection</h3>\n<p>\n')
-		s = self.logtext['mouse']
-		lines = s.split('\n')
-		if mouse_figures:
-			p = re.compile('  ([0-9A-Z]+) +([A-Z]{2})([ZNE]{1}).* (MOUSE detected.*)')
-		for line in lines:
-			if mouse_figures:
-				m = p.match(line)
-				if m:
-					line = '  <a href="{fig:s}mouse_YES_{0:s}{comp:s}.png" data-lightbox="mouse">\n    {0:s} {1:s}{2:s}</a>: {3:s}'.format(*m.groups(), fig=mouse_figures, comp={'Z':'0', 'N':'1', 'E':'2'}[m.groups()[2]])
-			out.write(line+'<br />\n')
 	out.write('<h3>Data source</h3>\n<p>\n')
 	if 'network' in self.logtext:
 		out.write(self.logtext['network'] + '<br />\n')
@@ -548,21 +536,41 @@ def html_log(self, outfile='$outdir/index.html', reference=None, h1='ISOLA-ObsPy
   </div>
 </div>
 '''.format(top=s1+'top'+s2, NS=s1+'N-S'+s2, WE=s1+'W-E'+s2))
+	if 'mouse' in self.logtext:
+		out.write('<h3>Mouse detection</h3>\n<p>\n')
+		s = self.logtext['mouse']
+		lines = s.split('\n')
+		if mouse_figures:
+			p = re.compile('  ([0-9A-Z]+) +([A-Z]{2})([ZNE]{1}).* (MOUSE detected.*)')
+			p1 = re.compile('  ([0-9A-Z]+) +([A-Z]{2})([ZNE]{1}).* (MOUSE suspected.*)')
+
+		for line in lines:
+			if mouse_figures:
+				m = p.match(line)
+				m1 = p1.match(line)
+				if m:
+					line = '  <a href="{fig:s}mouse_YES_{0:s}{comp:s}.png" data-lightbox="mouse">\n    {0:s} {1:s}{2:s}</a>: {3:s}'.format(*m.groups(), fig=mouse_figures, comp={'Z':'0', 'N':'1', 'E':'2'}[m.groups()[2]])
+			#out.write(line+'<br />\n')
+				if m1:
+					line = '  <a href="{fig:s}mouse_YES_{0:s}{comp:s}.png" data-lightbox="mouse">\n    {0:s} {1:s}{2:s}</a>: {3:s}'.format(*m1.groups(), fig=mouse_figures, comp={'Z':'0', 'N':'1', 'E':'2'}[m1.groups()[2]])
+			out.write(line)#+'<br />\n')
+
 	if plot_maps:
 		out.write('\n\n<h3>Stability in space (top view)</h3>\n\n<div class="thumb tleft">\n')
 		k = plot_maps.rfind(".")
 		for z in self.grid.depths:
-			filename = plot_maps[:k] + "_{0:0>5.0f}".format(z) + plot_maps[k:]
-			out.write('  <a href="{0:s}" data-lightbox="map">\n    <img alt="" src="{0:s}" height="100" class="thumbimage" />\n  </a>\n'.format(filename))
-		out.write('  <div class="thumbcaption">\n    click to compare different depths\n  </div>\n</div>\n')
+		    if z==C['z']:
+		        filename = plot_maps[:k] + "_{0:0>5.0f}".format(z) + plot_maps[k:]
+		        out.write('  <a href="{0:s}" data-lightbox="map">\n    <img alt="" src="{0:s}" height="100" class="thumbimage" />\n  </a>\n'.format(filename))
+		out.write('</div>\n')#  <div class="thumbcaption">\n    click to compare different depths\n  </div>\n</div>\n')
 	if plot_slices:
 		k = plot_slices.rfind(".")
 		s1 = plot_slices[:k] + '_'
 		s2 = plot_slices[k:]
 		out.write('\n\n<h3>Stability in space (side view)</h3>\n\n<div class="thumb tleft">\n')
-		for slice in ('N-S', 'W-E', 'NW-SE', 'SW-NE'):
+		for slice in ('N-S', 'W-E'):#, 'NW-SE', 'SW-NE'):
 			out.write('  <a href="{0:s}" data-lightbox="slice">\n    <img alt="" src="{0:s}" height="150" class="thumbimage" />\n  </a>\n'.format(s1+slice+s2))
-		out.write('  <div class="thumbcaption">\n    click to compare different points of view\n  </div>\n</div>\n')
+		out.write('</div>\n')#  <div class="thumbcaption">\n    click to compare different points of view\n  </div>\n</div>\n')
 	out.write('''
 
 <h2>Calculation parameters</h2>

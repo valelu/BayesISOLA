@@ -34,6 +34,7 @@ def tukeywin(window_length, alpha=0.5):
     return w
 
 def running_mean(x, N):
+	from math import floor
 	cumsum = np.cumsum(np.insert(x, 0, 0))
 	rm = (cumsum[N:] - cumsum[:-N])/N
 	Nzeros = floor(N/2)
@@ -174,6 +175,8 @@ def covariance_matrix_SACF(self, T = 15.0, taper = 0.0, save_non_inverted=False,
 	:type save_non_inverted: bool, optional
 	:param save_non_inverted: If ``True``, save also non-inverted matrix, which can be plotted later.
 	"""
+	from math import floor
+	from scipy import signal
 	self.log('\nCreating SACF covariance matrix')
 	self.log('signal duration {0:5.1f} sec'.format(T))
 	self.log('station         \t L1 (sec)')
@@ -189,10 +192,13 @@ def covariance_matrix_SACF(self, T = 15.0, taper = 0.0, save_non_inverted=False,
 		if sta['useE']: idx.append(2)
 		d_st_tmp = []
 		for i in idx:
-			ntp = floor(len(self.data_shifts)/2)
+			ntp = floor(len(self.d.data_shifts)/2)
 			perOfMax = 0.1 # percentage of data variance from maximum amp (* 100%)
-			d_st_tmp.append((perOfMax * max(abs(self.data_shifts[ntp][r][i][0:n])))**2) # data variance
-		d_st_tmp_max = max(d_st_tmp)
+			d_st_tmp.append((perOfMax * max(abs(self.d.data_shifts[ntp][r][i][0:n])))**2) # data variance
+		try:
+		    d_st_tmp_max = max(d_st_tmp)
+		except ValueError:
+		    d_st_tmp_max=0. #if station is not used in the inversion
 		d_variance.append(d_st_tmp_max)
 	d_var_max = max(d_variance)
 	
@@ -219,15 +225,15 @@ def covariance_matrix_SACF(self, T = 15.0, taper = 0.0, save_non_inverted=False,
 					
 					# Prepare parameters
 					nsampl = self.d.npts_slice
-					dt = 1/self.samprate
+					dt = 1/self.d.samprate
 					L1s = round(L1/dt)
 					
 					if (L1s < 2):
 						L1s = 2
 						#print('L1 changed to the minimum allowed value: 2 samples')
 					
-					ntp = floor(len(self.data_shifts)/2)
-					f = g = np.array(self.data_shifts[ntp][r][i][0:nsampl]) # [time_shift][station][comp][sampl]
+					ntp = floor(len(self.d.data_shifts)/2)
+					f = g = np.array(self.d.data_shifts[ntp][r][i][0:nsampl]) # [time_shift][station][comp][sampl]
 					
 					#plt.figure(0)
 					#plt.plot(f)
@@ -333,8 +339,8 @@ def covariance_matrix_ACF(self, save_non_inverted=False):
 	self.log('station         \t L1 (sec)')
 	n = self.d.npts_slice
 	
-	for shift in range(len(self.d_shifts)):
-		d_shift = self.d_shifts[shift]
+	for shift in range(len(self.d.d_shifts)):
+		d_shift = self.d.d_shifts[shift]
 		
 		# Get components variance
 		d_variance = []
@@ -345,7 +351,7 @@ def covariance_matrix_ACF(self, save_non_inverted=False):
 			if sta['useN']: idx.append(1)
 			if sta['useE']: idx.append(2)
 			for i in idx:
-				d_variance.append((max(abs(self.data_shifts[shift][r][i][0:n]))/50)**2) # data variance set to 5% of the maximum
+				d_variance.append((max(abs(self.d.data_shifts[shift][r][i][0:n]))/50)**2) # data variance set to 5% of the maximum
 		d_var_max = max(d_variance)
 		C_shift = []
 		C_inv_shift = []
@@ -372,7 +378,7 @@ def covariance_matrix_ACF(self, save_non_inverted=False):
 						
 						# Prepare parameters
 						nsampl = self.d.npts_slice
-						dt = 1/self.samprate
+						dt = 1/self.d.samprate
 						L1s = round(L1/dt)
 						L12s = 1
 						
@@ -383,7 +389,7 @@ def covariance_matrix_ACF(self, save_non_inverted=False):
 						if (L1s % 2 == 0):
 							L1s = L1s - 1
 						
-						f = g = np.array(self.data_shifts[shift][r][i][0:nsampl]) # [time_shift][station][comp][sampl]
+						f = g = np.array(self.d.data_shifts[shift][r][i][0:nsampl]) # [time_shift][station][comp][sampl]
 						
 						# New number of samples
 						nsamplN = len(f) + 2*L1s

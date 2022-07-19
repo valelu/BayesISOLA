@@ -19,9 +19,9 @@ def set_grid(self, min_depth=1000):
 	"""
 	step_x = self.step_x; step_z = self.step_z; max_points = self.max_points
 	if self.add_rupture_length:
-		rupture_length = self.data.rupture_length
+	        rupture_length = self.data.rupture_length
 	else:
-		rupture_length = 0
+	        rupture_length = 0
 	if self.grid_radius:
 		self.radius = radius = self.grid_radius
 	else:
@@ -60,8 +60,7 @@ def set_grid(self, min_depth=1000):
 			for z in depths:
 				edge = z==depths[0] or z==depths[-1] or (math.sqrt((abs(x)+step_x)**2+y**2) > radius or math.sqrt((abs(y)+step_x)**2+x**2) > radius) and self.circle_shape or max(abs(i),abs(j))==n_steps
 				self.grid.append({'x':x, 'y':y, 'z':z, 'err':0, 'edge':edge,
-					 'x_id':alphabet_string[n_steps+i], 'y_id':numbers_str[n_steps+j], 'z_id':numbers_str[depths.index(z)], 'path':None})
-				
+                                                         'x_id':alphabet_string[n_steps+i], 'y_id':numbers_str[n_steps+j], 'z_id':numbers_str[depths.index(z)], 'path':None}) 
 	self.depths = depths
 	self.step_x = step_x; self.step_z = step_z
 	self.data.log('\nGrid parameters:\n  number of points: {0:4d}\n  horizontal step: {1:5.0f} m\n  vertical step: {2:5.0f} m\n  grid radius: {3:6.3f} km\n  minimal depth: {4:6.3f} km\n  maximal depth: {5:6.3f} km\nEstimated rupture length: {6:6.3f} km'.format(len(self.grid), step_x, step_z, radius/1e3, depth_min/1e3, depth_max/1e3, self.data.rupture_length/1e3))

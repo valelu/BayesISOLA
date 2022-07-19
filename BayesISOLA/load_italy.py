@@ -56,7 +56,10 @@ class load_italy:
 	from BayesISOLA._input_event import set_source_time_function
 	from BayesISOLA._input_network import create_station_index, write_stations
 	from BayesISOLA._input_itaca import load_itaca#, extract_event, extract_network_coordinates, load_itadata
-	from BayesISOLA._input_asdf import load_asdf	
+	from BayesISOLA._input_asdf import load_asdf
+	from BayesISOLA._input_remote_ita import load_from_esm 
+	from BayesISOLA._mouse_susp import suspect_mouse
+
 	
 	def __init__(self, outdir='output', logfile='$outdir/log.txt', output_mkdir=True):
 		self.outdir = outdir
