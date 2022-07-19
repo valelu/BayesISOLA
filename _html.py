@@ -14,12 +14,14 @@ def imgpath(img, img2, html):
 	"""
 	if img and img != 'auto':
 		return img
-	if img2:
+	if img2: #img=='auto' and img2:
 		d = os.path.dirname(html)
 		return os.path.relpath(img2, d)
 	return None
 
-def html_log(self, outfile='$outdir/index.html', reference=None, h1='ISOLA-ObsPy automated solution', backlink=False, plot_MT='auto', plot_uncertainty='auto', plot_stations='auto', plot_seismo_cova='auto', plot_seismo_sharey='auto',plot_seismo='auto', mouse_figures=None, plot_spectra='auto', plot_noise='auto', plot_covariance_function='auto', plot_covariance_matrix='auto', plot_maps='auto', plot_slices='auto', plot_maps_sum='auto'):
+
+def html_log(self, outfile='$outdir/index.html', reference=None, h1='ISOLA-ObsPy automated solution', backlink=False, plot_MT='auto', plot_uncertainty='auto', plot_stations='auto', plot_seismo_cova='auto', plot_seismo_sharey='auto',plot_seismo='auto', mouse_figures=None, plot_spectra='auto', plot_noise='auto', plot_covariance_function='auto', plot_covariance_matrix='auto', plot_maps='auto', plot_slices='auto', plot_maps_sum='auto',MT_comp_precision=2):
+
 	"""
 	Generates an HTML page containing informations about the calculation and the result together with figures
 	
@@ -57,7 +59,12 @@ def html_log(self, outfile='$outdir/index.html', reference=None, h1='ISOLA-ObsPy
 	:type plot_slices: string, optional
 	:param plot_maps_sum: path to figures of solutions across the grid plotted by :func:`plot_maps_sum` (the common part of filename)
 	:type plot_maps_sum: string, optional
+	:param MT_comp_precision: number of decimal digits of moment tensor components (default ``2``)
+	:type MT_comp_precision: int, optional
+
 	"""
+	outfile = outfile.replace('$outdir', self.outdir)
+	out = open(outfile, 'w')
 	plots = self.plots
 	plot_MT = imgpath(plot_MT, plots['MT'], outfile)
 	plot_uncertainty = imgpath(plot_uncertainty, plots['uncertainty'], outfile)
@@ -73,7 +80,6 @@ def html_log(self, outfile='$outdir/index.html', reference=None, h1='ISOLA-ObsPy
 	plot_slices = imgpath(plot_slices, plots['slices'], outfile)
 	plot_maps_sum = imgpath(plot_maps_sum, plots['maps_sum'], outfile)
 	
-	out = open(outfile.replace('$outdir', self.outdir), 'w')
 	e = self.inp.event
 	C = self.MT.centroid
 	decomp = self.MT.mt_decomp.copy()
@@ -83,11 +89,11 @@ def html_log(self, outfile='$outdir/index.html', reference=None, h1='ISOLA-ObsPy
 		<head>
 		<meta charset="UTF-8">
 		<title>{0:s}</title>
-		<link rel="stylesheet" href="../html/style.css" />
-		<link rel="stylesheet" href="../html/css/lightbox.min.css">
+		<link rel="stylesheet" href="{1:s}" />
+		<link rel="stylesheet" href="{2:s}" />
 		</head>
 		<body>
-		""".format(h1)))
+		""".format(h1, imgpath('', "html/style.css", outfile), imgpath('', 'html/css/lightbox.min.css', outfile))))
 	out.write('<h1>'+h1+'</h1>\n')
 	if backlink:
 		out.write('<p><a href="../index.html">back to event list</a></p>\n')
@@ -98,7 +104,7 @@ def html_log(self, outfile='$outdir/index.html', reference=None, h1='ISOLA-ObsPy
 		' components)<br />\n    ' + 
 		{1:'with the <strong>data covariance matrix</strong> based on real noise', 0:'without the covariance matrix'}[bool(self.cova.Cd_inv)] + 
 		{1:'<br />\n    with <strong>crosscovariance</strong> between components', 0:''}[bool(self.cova.LT3)] + 
-		'.</dd>\n  <dt>Reference</dt>\n  <dd>Vackář, Gallovič, Burjánek, Zahradník, and Clinton. Bayesian ISOLA: new tool for automated centroid moment tensor inversion,  <em>Geophysical Journal International, 210 (2), 693–705</em>, <a href="https://academic.oup.com/gji/article/210/2/693/3747443">https://doi.org/10.1093/gji/ggx158</a> <a href="http://geo.mff.cuni.cz/~vackar/papers/isola-obspy.pdf">PDF</a></dd>\n</dl>\n\n')
+		'.</dd>\n  <dt>Reference</dt>\n  <dd>Vackář, Gallovič, Burjánek, Zahradník, and Clinton (2017). Bayesian ISOLA: new tool for automated centroid moment tensor inversion, <em>Geophysical Journal International, 210 (2), 693-705</em>,<a href="https://academic.oup.com/gji/article/210/2/693/3747443"> https://doi.org/10.1093/gji/ggx158</a> <a href="http://geo.mff.cuni.cz/~vackar/papers/isola-obspy.pdf"> PDF.</a></dd>\n</dl>\n\n')
 	out.write(textwrap.dedent('''\
 		<h2>Hypocenter location</h2>
 		
@@ -227,16 +233,16 @@ def html_log(self, outfile='$outdir/index.html', reference=None, h1='ISOLA-ObsPy
   <tr><th>scalar seismic moment M<sub>0</sub></th>	<td>{mom:5.2e} Nm</td>	<td></td></tr>
   <tr><th>moment magnitude M<sub>w</sub></th>	<td>{Mw:3.1f}</td>	<td>{ref_Mw:3.1f}</td></tr>
   <tr><th colspan="3" class="center">Moment tensor components</th></tr>
-  <tr><th>M<sub>rr</sub></th>			<td>{1:5.2f} * {0:5.0e}</td>	<td>&nbsp;</td></tr>
-  <tr><th>M<sub>&theta;&theta;</sub></th>	<td>{2:5.2f} * {0:5.0e}</td>	<td>&nbsp;</td></tr>
-  <tr><th>M<sub>&#981;&#981;</sub></th>		<td>{3:5.2f} * {0:5.0e}</td>	<td>&nbsp;</td></tr>
-  <tr><th>M<sub>r&theta;</sub></th>		<td>{4:5.2f} * {0:5.0e}</td>	<td>&nbsp;</td></tr>
-  <tr><th>M<sub>r&#981;</sub></th>		<td>{5:5.2f} * {0:5.0e}</td>	<td>&nbsp;</td></tr>
-  <tr><th>M<sub>&theta;&#981;</sub></th>	<td>{6:5.2f} * {0:5.0e}</td>	<td>&nbsp;</td></tr>
+  <tr><th>M<sub>rr</sub></th>			<td>{1:{7}.{8}f} * {0:5.0e}</td>	<td>&nbsp;</td></tr>
+  <tr><th>M<sub>&theta;&theta;</sub></th>	<td>{2:{7}.{8}f} * {0:5.0e}</td>	<td>&nbsp;</td></tr>
+  <tr><th>M<sub>&#981;&#981;</sub></th>		<td>{3:{7}.{8}f} * {0:5.0e}</td>	<td>&nbsp;</td></tr>
+  <tr><th>M<sub>r&theta;</sub></th>		<td>{4:{7}.{8}f} * {0:5.0e}</td>	<td>&nbsp;</td></tr>
+  <tr><th>M<sub>r&#981;</sub></th>		<td>{5:{7}.{8}f} * {0:5.0e}</td>	<td>&nbsp;</td></tr>
+  <tr><th>M<sub>&theta;&#981;</sub></th>	<td>{6:{7}.{8}f} * {0:5.0e}</td>	<td>&nbsp;</td></tr>
   <tr><th colspan="3" class="center">Moment tensor decomposition</th></tr>
   <tr><th>DC component</th>	<td>{dc_perc:3.0f} %</td>	<td>{ref_dc_perc:3.0f} %</td></tr>
   <tr><th>CLVD component</th>	<td>{clvd_perc:3.0f} %</td>	<td>{ref_clvd_perc:3.0f} %</td></tr>
-'''.format(c, *MT2, depth=C['z']/1e3, **decomp))
+'''.format(c, *MT2, MT_comp_precision+3, MT_comp_precision, depth=C['z']/1e3, **decomp))
 		if not self.MT.deviatoric:
 			out.write('''
   <tr><th>isotropic component</th>	<td>{iso_perc:3.0f} %</td>	<td>{ref_iso_perc:3.0f} %</td></tr>
@@ -258,16 +264,16 @@ def html_log(self, outfile='$outdir/index.html', reference=None, h1='ISOLA-ObsPy
   <tr><th>scalar seismic moment M<sub>0</sub></th>	<td>{mom:5.2e} Nm</td></tr>
   <tr><th>moment magnitude M<sub>w</sub></th>	<td>{Mw:3.1f}</td></tr>
   <tr><th colspan="2" class="center">Moment tensor components</th></tr>
-  <tr><th>M<sub>rr</sub></th>			<td>{1:5.2f} * {0:5.0e}</td></tr>
-  <tr><th>M<sub>&theta;&theta;</sub></th>	<td>{2:5.2f} * {0:5.0e}</td></tr>
-  <tr><th>M<sub>&#981;&#981;</sub></th>		<td>{3:5.2f} * {0:5.0e}</td></tr>
-  <tr><th>M<sub>r&theta;</sub></th>		<td>{4:5.2f} * {0:5.0e}</td></tr>
-  <tr><th>M<sub>r&#981;</sub></th>		<td>{5:5.2f} * {0:5.0e}</td></tr>
-  <tr><th>M<sub>&theta;&#981;</sub></th>	<td>{6:5.2f} * {0:5.0e}</td></tr>
+  <tr><th>M<sub>rr</sub></th>			<td>{1:{7}.{8}f} * {0:5.0e}</td></tr>
+  <tr><th>M<sub>&theta;&theta;</sub></th>	<td>{2:{7}.{8}f} * {0:5.0e}</td></tr>
+  <tr><th>M<sub>&#981;&#981;</sub></th>		<td>{3:{7}.{8}f} * {0:5.0e}</td></tr>
+  <tr><th>M<sub>r&theta;</sub></th>		<td>{4:{7}.{8}f} * {0:5.0e}</td></tr>
+  <tr><th>M<sub>r&#981;</sub></th>		<td>{5:{7}.{8}f} * {0:5.0e}</td></tr>
+  <tr><th>M<sub>&theta;&#981;</sub></th>	<td>{6:{7}.{8}f} * {0:5.0e}</td></tr>
   <tr><th colspan="2" class="center">Moment tensor decomposition</th></tr>
   <tr><th>DC</th>	<td>{dc_perc:3.0f} %</td></tr>
   <tr><th>CLVD</th>	<td>{clvd_perc:3.0f} %</td></tr>
-'''.format(c, *MT2, depth=C['z']/1e3, **decomp))
+'''.format(c, *MT2, MT_comp_precision+3, MT_comp_precision, depth=C['z']/1e3, **decomp))
 		if not self.MT.deviatoric:
 			out.write('''
   <tr><th>ISO</th>	<td>{iso_perc:3.0f} %</td></tr>
@@ -286,16 +292,16 @@ def html_log(self, outfile='$outdir/index.html', reference=None, h1='ISOLA-ObsPy
   <tr><th colspan="2" class="center">Centroid position</th></tr>
   <tr><th>depth</th>	<td>{depth:3.1f} km</td></tr>
   <tr><th colspan="2" class="center">Moment tensor components</th></tr>
-  <tr><th>M<sub>rr</sub></th>			<td>{1:5.2f} * {0:5.0e}</td></tr>
-  <tr><th>M<sub>&theta;&theta;</sub></th>	<td>{2:5.2f} * {0:5.0e}</td></tr>
-  <tr><th>M<sub>&#981;&#981;</sub></th>		<td>{3:5.2f} * {0:5.0e}</td></tr>
-  <tr><th>M<sub>r&theta;</sub></th>		<td>{4:5.2f} * {0:5.0e}</td></tr>
-  <tr><th>M<sub>r&#981;</sub></th>		<td>{5:5.2f} * {0:5.0e}</td></tr>
-  <tr><th>M<sub>&theta;&#981;</sub></th>	<td>{6:5.2f} * {0:5.0e}</td></tr>
+  <tr><th>M<sub>rr</sub></th>			<td>{1:{7}.{8}f} * {0:5.0e}</td></tr>
+  <tr><th>M<sub>&theta;&theta;</sub></th>	<td>{2:{7}.{8}f} * {0:5.0e}</td></tr>
+  <tr><th>M<sub>&#981;&#981;</sub></th>		<td>{3:{7}.{8}f} * {0:5.0e}</td></tr>
+  <tr><th>M<sub>r&theta;</sub></th>		<td>{4:{7}.{8}f} * {0:5.0e}</td></tr>
+  <tr><th>M<sub>r&#981;</sub></th>		<td>{5:{7}.{8}f} * {0:5.0e}</td></tr>
+  <tr><th>M<sub>&theta;&#981;</sub></th>	<td>{6:{7}.{8}f} * {0:5.0e}</td></tr>
   <tr><th colspan="2" class="center">Result quality</th></tr>
   <tr><th>condition number</th>	<td>{CN:2.0f}</td></tr>
   <tr><th>variance reduction</th>	<td>{VR:2.0f} %</td></tr>
-'''.format(c, *MT2, depth=C['z']/1e3, VR=C['VR']*100, CN=C['CN']))
+'''.format(c, *MT2, MT_comp_precision+3, MT_comp_precision, depth=C['z']/1e3, VR=C['VR']*100, CN=C['CN']))
 	if self.MT.max_VR:
 		out.write('  <tr><th>VR ({2:d} closest components)</th>	<td>{1:2.0f} %</td>{0:s}</tr>'.format(('', '<td></td>')[bool(reference)], self.MT.max_VR[0]*100, self.MT.max_VR[1]))
 	if reference and 'kagan' in reference:
@@ -412,18 +418,6 @@ def html_log(self, outfile='$outdir/index.html', reference=None, h1='ISOLA-ObsPy
 		s = s.replace('\t', '</td>\t<td>').replace('\n', '</td></tr>\n<tr><td>')[:-8]
 		s = '<tr><td>' + s + '</table>\n\n'
 		out.write(s)
-	if 'mouse' in self.logtext:
-		out.write('<h3>Mouse detection</h3>\n<p>\n')
-		s = self.logtext['mouse']
-		lines = s.split('\n')
-		if mouse_figures:
-			p = re.compile('  ([0-9A-Z]+) +([A-Z]{2})([ZNE]{1}).* (MOUSE detected.*)')
-		for line in lines:
-			if mouse_figures:
-				m = p.match(line)
-				if m:
-					line = '  <a href="{fig:s}mouse_YES_{0:s}{comp:s}.png" data-lightbox="mouse">\n    {0:s} {1:s}{2:s}</a>: {3:s}'.format(*m.groups(), fig=mouse_figures, comp={'Z':'0', 'N':'1', 'E':'2'}[m.groups()[2]])
-			out.write(line+'<br />\n')
 	out.write('<h3>Data source</h3>\n<p>\n')
 	if 'network' in self.logtext:
 		out.write(self.logtext['network'] + '<br />\n')
@@ -542,21 +536,41 @@ def html_log(self, outfile='$outdir/index.html', reference=None, h1='ISOLA-ObsPy
   </div>
 </div>
 '''.format(top=s1+'top'+s2, NS=s1+'N-S'+s2, WE=s1+'W-E'+s2))
+	if 'mouse' in self.logtext:
+		out.write('<h3>Mouse detection</h3>\n<p>\n')
+		s = self.logtext['mouse']
+		lines = s.split('\n')
+		if mouse_figures:
+			p = re.compile('  ([0-9A-Z]+) +([A-Z]{2})([ZNE]{1}).* (MOUSE detected.*)')
+			p1 = re.compile('  ([0-9A-Z]+) +([A-Z]{2})([ZNE]{1}).* (MOUSE suspected.*)')
+
+		for line in lines:
+			if mouse_figures:
+				m = p.match(line)
+				m1 = p1.match(line)
+				if m:
+					line = '  <a href="{fig:s}mouse_YES_{0:s}{comp:s}.png" data-lightbox="mouse">\n    {0:s} {1:s}{2:s}</a>: {3:s}'.format(*m.groups(), fig=mouse_figures, comp={'Z':'0', 'N':'1', 'E':'2'}[m.groups()[2]])
+			#out.write(line+'<br />\n')
+				if m1:
+					line = '  <a href="{fig:s}mouse_YES_{0:s}{comp:s}.png" data-lightbox="mouse">\n    {0:s} {1:s}{2:s}</a>: {3:s}'.format(*m1.groups(), fig=mouse_figures, comp={'Z':'0', 'N':'1', 'E':'2'}[m1.groups()[2]])
+			out.write(line)#+'<br />\n')
+
 	if plot_maps:
 		out.write('\n\n<h3>Stability in space (top view)</h3>\n\n<div class="thumb tleft">\n')
 		k = plot_maps.rfind(".")
 		for z in self.grid.depths:
-			filename = plot_maps[:k] + "_{0:0>5.0f}".format(z) + plot_maps[k:]
-			out.write('  <a href="{0:s}" data-lightbox="map">\n    <img alt="" src="{0:s}" height="100" class="thumbimage" />\n  </a>\n'.format(filename))
-		out.write('  <div class="thumbcaption">\n    click to compare different depths\n  </div>\n</div>\n')
+		    if z==C['z']:
+		        filename = plot_maps[:k] + "_{0:0>5.0f}".format(z) + plot_maps[k:]
+		        out.write('  <a href="{0:s}" data-lightbox="map">\n    <img alt="" src="{0:s}" height="100" class="thumbimage" />\n  </a>\n'.format(filename))
+		out.write('</div>\n')#  <div class="thumbcaption">\n    click to compare different depths\n  </div>\n</div>\n')
 	if plot_slices:
 		k = plot_slices.rfind(".")
 		s1 = plot_slices[:k] + '_'
 		s2 = plot_slices[k:]
 		out.write('\n\n<h3>Stability in space (side view)</h3>\n\n<div class="thumb tleft">\n')
-		for slice in ('N-S', 'W-E', 'NW-SE', 'SW-NE'):
+		for slice in ('N-S', 'W-E'):#, 'NW-SE', 'SW-NE'):
 			out.write('  <a href="{0:s}" data-lightbox="slice">\n    <img alt="" src="{0:s}" height="150" class="thumbimage" />\n  </a>\n'.format(s1+slice+s2))
-		out.write('  <div class="thumbcaption">\n    click to compare different points of view\n  </div>\n</div>\n')
+		out.write('</div>\n')#  <div class="thumbcaption">\n    click to compare different points of view\n  </div>\n</div>\n')
 	out.write('''
 
 <h2>Calculation parameters</h2>
@@ -644,13 +658,13 @@ def html_log(self, outfile='$outdir/index.html', reference=None, h1='ISOLA-ObsPy
 
 
 	out.write("""
-<script src="../html/js/lightbox-plus-jquery.min.js"></script>
+<script src="{0:s}"></script>
 <script>
-lightbox.option({
+lightbox.option({{
 'resizeDuration': 0
-})
+}})
 </script>
 </body>
 </html>
-""")
+""".format(imgpath('', "html/js/lightbox-plus-jquery.min.js", outfile)))
 	out.close()
