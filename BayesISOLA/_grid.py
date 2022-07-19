@@ -81,7 +81,7 @@ def set_time_grid(self, fmax, max_samprate):
 	if self.grid_min_time:
 		self.shift_min  = shift_min  = self.grid_min_time
 	else:
-		self.shift_min  = shift_min  = -self.time_unc- self.data.rupture_duration/2.
+		self.shift_min  = shift_min  = -self.time_unc
 	self.shift_step = shift_step = 1./fmax * 0.01
 	self.SHIFT_min = int(round(shift_min*max_samprate))
 	self.SHIFT_max = int(round(shift_max*max_samprate))

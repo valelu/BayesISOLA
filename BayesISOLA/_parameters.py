@@ -204,7 +204,7 @@ def set_parameters(self, fmax, fmin=0., wavelengths=5, min_depth=1000,multichann
 	self.grid.set_time_grid(self.fmax, self.max_samprate)
 	self.set_time_window()
 	self.set_Greens_parameters()
-#	self.count_components(log)
+	self.count_components(log)
 
 def skip_short_records(self, noise=False):
 	"""

@@ -7,9 +7,9 @@ from BayesISOLA.MT_comps import a2mt, decompose, decompose_mopad
 
 def print_solution(self,MT_comp_precision=2):
 	"""
+	Write into log the best solution ``self.centroid``.
         :param MT_comp_precision: number of decimal digits of moment tensor components (default ``2``)
         :type MT_comp_precision: int, optional
-	Write into log the best solution ``self.centroid``.
 	"""
 	C = self.centroid
 	t = self.event['t'] + C['shift']
