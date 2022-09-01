@@ -552,7 +552,7 @@ def html_log(self, outfile='$outdir/index.html', reference=None, h1='ISOLA-ObsPy
 					line = '  <a href="{fig:s}mouse_YES_{0:s}{comp:s}.png" data-lightbox="mouse">\n    {0:s} {1:s}{2:s}</a>: {3:s}'.format(*m.groups(), fig=mouse_figures, comp={'Z':'0', 'N':'1', 'E':'2'}[m.groups()[2]])
 			#out.write(line+'<br />\n')
 				if m1:
-					line = '  <a href="{fig:s}mouse_YES_{0:s}{comp:s}.png" data-lightbox="mouse">\n    {0:s} {1:s}{2:s}</a>: {3:s}'.format(*m1.groups(), fig=mouse_figures, comp={'Z':'0', 'N':'1', 'E':'2'}[m1.groups()[2]])
+					line = '  <a href="{fig:s}mouse_YES_{0:s}{comp:s}.png" data-lightbox="mouse">\n    {0:s} {1:s}{2:s}</a>: {3:s}'.format(*m1.groups(), fig=mouse_figures, comp=m1.groups()[2])
 			out.write(line)#+'<br />\n')
 
 	if plot_maps:

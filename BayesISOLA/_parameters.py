@@ -35,16 +35,17 @@ def set_frequencies(self, fmax, fmin=0., wavelengths=5,multichannel=False):
 def set_multichannel_freq(self,fmin):
         for stn in self.d.stations:
             if fmin<0.05:
-                if stn['channelcode']=="HL" or stn['channelcode']=="HN":
+                if stn['channelcode']=="HL" or stn['channelcode']=="HN" or stn['channelcode']=="HG":
                     stn['fmin']=0.05
                     self.log('Assuming fmin=0.05 at station '+stn['code']+' with channel '+stn['channelcode'])
-            if fmin<0.1 and (stn['channelcode']=="EH" or stn['channelcode']=='HG'):
+            if fmin<0.1 and stn['channelcode']=="EH":
                     self.log('Assuming fmin=0.1 at station '+stn['code'],'with channel '+stn['channelcode'])
                     stn['fmin']=0.1
         #update stations:
         data_upd=[]
         stats_upd=[]
         for st in self.d.data:
+          if (len(st)>0):
             stats=st[0].stats
             stn=self.d.stations_index['_'.join([stats.network,stats.station,stats.location,stats.channel[0:2]])]
             fmin=stn['fmin']
