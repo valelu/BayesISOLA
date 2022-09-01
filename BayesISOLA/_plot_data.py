@@ -373,7 +373,7 @@ def plot_seismo_backend_1(self, plot_stations, plot_components, comp_order, cros
 	elif len(plot_stations)==1 and len(comps)==1: # one cell only
 		ax = np.array([[ax]])
 
-	for c in range(len(comps)):
+	for c in range(len(data[0])):
 		ax[0,c].set_title(title_prefix+data[0][comps[c]].stats.channel[2])
 
 	for sta in plot_stations:
