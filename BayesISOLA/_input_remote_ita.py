@@ -88,6 +88,7 @@ def load_ascii(self,url,data,min_distance,max_distance,invert_Z_only,invert_BB_o
 
 def load_hdf5(self,url,data,min_distance,max_distance,invert_Z_only,invert_BB_only,save_to): 
     import pyasdf #h5py
+    from pyasdf.exceptions import WaveformNotInFileException
     from BayesISOLA._input_asdf import extract_event,extract_data,extract_network_coordinates
 #WILL ALWAYS SAVE TO FILE
 #    if save_to:
@@ -101,24 +102,27 @@ def load_hdf5(self,url,data,min_distance,max_distance,invert_Z_only,invert_BB_on
         ds=pyasdf.ASDFDataSet('query.h5')
         
     #if dataset contains auxiliary data:
-    if len(ds.auxiliary_data.list())>0:
-        for sta in ds.waveforms.list():
-            sta=sta.replace(".","_")
-            for tag in ds.waveforms[sta].get_waveform_tags():
-                params=ds.auxiliary_data.Headers[sta][tag].parameters
-                if 'converted' in params['processing']:
-                    chann=params['stream']
-                    tt=[tag2 for tag2 in ds.waveforms[sta].get_waveform_tags() if chann in ds.auxiliary_data.Headers[sta][tag2].parameters['stream'] and 'manual' in ds.auxiliary_data.Headers[sta][tag2].parameters['processing']]
-                    if len(tt)==0: #there is no manually processed file
-                        del ds.waveforms[sta][tag] #so remove the also the converted because it is baad
-                    else:
-                        for tag2 in tt:
-                            del ds.waveforms[sta][tag2]
-    else:
-        if any(['mp' in tag for tag in ds.waveform_tags]):
+#    if len(ds.auxiliary_data.list())>0:
+#        for sta in ds.waveforms.list():
+#            sta=sta.replace(".","_")
+#            for tag in ds.waveforms[sta].get_waveform_tags():
+#                params=ds.auxiliary_data.Headers[sta][tag].parameters
+#                if 'converted' in params['processing']:
+#                    chann=params['stream']
+#                    tt=[tag2 for tag2 in ds.waveforms[sta].get_waveform_tags() if chann in ds.auxiliary_data.Headers[sta][tag2].parameters['stream'] and 'manual' in ds.auxiliary_data.Headers[sta][tag2].parameters['processing']]
+#                    if len(tt)==0: #there is no manually processed file
+#                        del ds.waveforms[sta][tag] #so remove the also the converted because it is baad
+#                    else:
+#                        for tag2 in tt:
+#                            del ds.waveforms[sta][tag2]
+#    else:
+    if any(['mp' in tag[-2:] for tag in ds.waveform_tags]):
         #data contains manually processed waveforms:
-           for sta in ds.waveforms.list():
-              for tag in ds.waveforms[sta].get_waveform_tags():
+           stalist=ds.waveforms.list()
+           for sta in stalist:
+              taglist=ds.waveforms[sta].get_waveform_tags()
+              for tag in taglist:
+                 print(sta,tag)
                  if tag[-2:]=='cv': #it is converted data
                     tt=tag[:-2]+'mp'
                     try:
