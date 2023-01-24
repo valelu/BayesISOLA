@@ -106,6 +106,7 @@ def html_log(self, outfile='$outdir/index.html', reference=None, h1='ISOLA-ObsPy
 		{1:'<br />\n    with <strong>crosscovariance</strong> between components', 0:''}[bool(self.cova.LT3)] + 
 		'.</dd>\n  <dt>Reference</dt>\n  <dd>Vackář, Gallovič, Burjánek, Zahradník, and Clinton (2017). Bayesian ISOLA: new tool for automated centroid moment tensor inversion, <em>Geophysical Journal International </em>, 210 (2), 693-705,<a href="https://academic.oup.com/gji/article/210/2/693/3747443"> 10.1093/gji/ggx158</a>, <a href="http://geo.mff.cuni.cz/~vackar/papers/isola-obspy.pdf"> PDF.</a></dd>\n <dd>Github branch: <a href="https://github.com/valelu/BayesISOLA/tree/Italy"> Italy </a> </dd>\n</dl>\n\n')
 
+
 	out.write(textwrap.dedent('''\
 		<h2>Hypocenter location</h2>
 		
@@ -544,9 +545,9 @@ def html_log(self, outfile='$outdir/index.html', reference=None, h1='ISOLA-ObsPy
 		if mouse_figures:
 			p = re.compile('  ([0-9A-Z]+) +([A-Z]{2})([ZNE]{1}).* (MOUSE detected.*)')
 			p1 = re.compile('  ([0-9A-Z]+) +([A-Z]{2})([ZNE]{1}).* (MOUSE suspected.*)')
+
 		if any(p1.match(lines[i]) for i in range(len(lines))):
 			out.write('<p>Strong signal at low frequencies found for these components, ignored for inversion: <br/>\n')
-		
 		for line in lines:
 			if mouse_figures:
 				m = p.match(line)
@@ -574,7 +575,7 @@ def html_log(self, outfile='$outdir/index.html', reference=None, h1='ISOLA-ObsPy
 		for slice in ('N-S', 'W-E'):#, 'NW-SE', 'SW-NE'):
 			out.write('  <a href="{0:s}" data-lightbox="slice">\n    <img alt="" src="{0:s}" height="150" class="thumbimage" />\n  </a>\n'.format(s1+slice+s2))
 		out.write('</div>\n')#  <div class="thumbcaption">\n    click to compare different points of view\n  </div>\n</div>\n')
-	
+
 	out.write('''
 
 <h2>Calculation parameters</h2>

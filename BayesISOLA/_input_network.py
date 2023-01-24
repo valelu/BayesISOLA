@@ -98,10 +98,10 @@ def read_network_coordinates(self, filename, network='', location='', channelcod
 	:type channelcode: string, optional
 	:param min_distance: minimal epicentral distance in meters
 	:param min_distance: float or None
-	:param min_distance: maximal epicentral distance in meters
+	:param max_distance: maximal epicentral distance in meters
 	:param max_distance: float or None
-	:param min_distance: maximal number of stations used in inversion
-	:param max_distance: int or None
+        :param max_n_of_stations: maximal number of stations used in inversion
+        :param max_n_of_stations: int or None
 	
 	If ``min_distance`` is ``None``, value is calculated as 2*self.rupture_length. If ``max_distance`` is ``None``, value is calculated as :math:`1000 \cdot 2^{2M}`.
 	"""
@@ -131,7 +131,7 @@ def read_network_coordinates(self, filename, network='', location='', channelcod
 			self.models[model] = 0
 		net = network; loc = location; ch = channelcode # default values given by function parameters
 		if ":" in sta or "." in sta:
-			l = sta.replace(':', '.').split('.')
+			l = sta.replace(':','.').split('.')
 			net = l[0]; sta = l[1]
 			if len(l) > 2: loc = l[2]
 			if len(l) > 3: ch = l[3]
@@ -150,7 +150,7 @@ def read_network_coordinates(self, filename, network='', location='', channelcod
 			stats.append(stn)
 	stats = sorted(stats, key=lambda stn: stn['dist']) # sort by distance
 	if max_n_of_stations and len(stats) > max_n_of_stations:
-		stats = stats[0:max_n_of_stations]
+		stats = stats[0:max_n_of_stations] # BECAUSE OF GREENS FUNCTIONS CALCULATION
 	self.stations = stats
 	self.create_station_index()
 	

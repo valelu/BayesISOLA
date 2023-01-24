@@ -17,6 +17,7 @@ def load_asdf(self,file='query.h5',min_distance=None,max_distance=None,invert_Z_
     extract_data(self,ds)
 
 
+
 def check_metadataset(self,ds,tokenfile='token.txt'):
     from pyasdf.exceptions import WaveformNotInFileException
     events=ds.events

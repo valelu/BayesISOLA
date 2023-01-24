@@ -76,6 +76,7 @@ def suspect_mouse(self,fcrit1=0.05,fmax=20.,ampcrit1=0.1,fcrit2=0.05,ampcrit2=0.
                                         plt.yscale('log')
                                         plt.xlabel('frequency [Hz]')
                                         plt.ylabel('Acceleration amplitude spectrum')
+
                                         #if (np.amin(sp)<1.e-10):
                                         #   plt.ylim(bottom=1.e-8,top=5*np.amax(sp))
                                         p=plt.plot(fr,sp,colors[comp])
