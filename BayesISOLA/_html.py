@@ -14,7 +14,7 @@ def imgpath(img, img2, html):
 	"""
 	if img and img != 'auto':
 		return img
-	if img2:
+	if img2: #img=='auto' and img2:
 		d = os.path.dirname(html)
 		return os.path.relpath(img2, d)
 	return None
@@ -104,7 +104,8 @@ def html_log(self, outfile='$outdir/index.html', reference=None, h1='ISOLA-ObsPy
 		' components)<br />\n    ' + 
 		{1:'with the <strong>data covariance matrix</strong> based on real noise', 0:'without the covariance matrix'}[bool(self.cova.Cd_inv)] + 
 		{1:'<br />\n    with <strong>crosscovariance</strong> between components', 0:''}[bool(self.cova.LT3)] + 
-		'.</dd>\n  <dt>Reference</dt>\n  <dd>Vackář, Gallovič, Burjánek, Zahradník, and Clinton. Bayesian ISOLA: new tool for automated centroid moment tensor inversion, <em>in preparation</em>, <a href="http://geo.mff.cuni.cz/~vackar/papers/isola-obspy.pdf">PDF</a></dd>\n</dl>\n\n')
+		'.</dd>\n  <dt>Reference</dt>\n  <dd>Vackář, Gallovič, Burjánek, Zahradník, and Clinton (2017). Bayesian ISOLA: new tool for automated centroid moment tensor inversion, <em>Geophysical Journal International </em>, 210 (2), 693-705,<a href="https://academic.oup.com/gji/article/210/2/693/3747443"> 10.1093/gji/ggx158</a>, <a href="http://geo.mff.cuni.cz/~vackar/papers/isola-obspy.pdf"> PDF.</a></dd>\n <dd>Github branch: <a href="https://github.com/valelu/BayesISOLA/tree/Italy"> Italy </a> </dd>\n</dl>\n\n')
+
 	out.write(textwrap.dedent('''\
 		<h2>Hypocenter location</h2>
 		
@@ -302,8 +303,8 @@ def html_log(self, outfile='$outdir/index.html', reference=None, h1='ISOLA-ObsPy
   <tr><th>condition number</th>	<td>{CN:2.0f}</td></tr>
   <tr><th>variance reduction</th>	<td>{VR:2.0f} %</td></tr>
 '''.format(c, *MT2, MT_comp_precision+3, MT_comp_precision, depth=C['z']/1e3, VR=C['VR']*100, CN=C['CN']))
-	if self.MT.max_VR:
-		out.write('  <tr><th>VR ({2:d} closest components)</th>	<td>{1:2.0f} %</td>{0:s}</tr>'.format(('', '<td></td>')[bool(reference)], self.MT.max_VR[0]*100, self.MT.max_VR[1]))
+#	if self.MT.max_VR:
+#		out.write('  <tr><th>VR ({2:d} closest components)</th>	<td>{1:2.0f} %</td>{0:s}</tr>'.format(('', '<td></td>')[bool(reference)], self.MT.max_VR[0]*100, self.MT.max_VR[1]))
 	if reference and 'kagan' in reference:
 		out.write('<tr><th>Kagan angle</th>	<td colspan="2" class="center">{0:3.1f}°</td></tr>\n'.format(reference['kagan']))
 	out.write('</table>\n\n')
@@ -418,18 +419,6 @@ def html_log(self, outfile='$outdir/index.html', reference=None, h1='ISOLA-ObsPy
 		s = s.replace('\t', '</td>\t<td>').replace('\n', '</td></tr>\n<tr><td>')[:-8]
 		s = '<tr><td>' + s + '</table>\n\n'
 		out.write(s)
-	if 'mouse' in self.logtext:
-		out.write('<h3>Mouse detection</h3>\n<p>\n')
-		s = self.logtext['mouse']
-		lines = s.split('\n')
-		if mouse_figures:
-			p = re.compile('  ([0-9A-Z]+) +([A-Z]{2})([ZNE]{1}).* (MOUSE detected.*)')
-		for line in lines:
-			if mouse_figures:
-				m = p.match(line)
-				if m:
-					line = '  <a href="{fig:s}mouse_YES_{0:s}{comp:s}.png" data-lightbox="mouse">\n    {0:s} {1:s}{2:s}</a>: {3:s}'.format(*m.groups(), fig=mouse_figures, comp={'Z':'0', 'N':'1', 'E':'2'}[m.groups()[2]])
-			out.write(line+'<br />\n')
 	out.write('<h3>Data source</h3>\n<p>\n')
 	if 'network' in self.logtext:
 		out.write(self.logtext['network'] + '<br />\n')
@@ -548,21 +537,44 @@ def html_log(self, outfile='$outdir/index.html', reference=None, h1='ISOLA-ObsPy
   </div>
 </div>
 '''.format(top=s1+'top'+s2, NS=s1+'N-S'+s2, WE=s1+'W-E'+s2))
+	if 'mouse' in self.logtext:
+		out.write('<h3>Mouse detection</h3>\n<p>\n')
+		s = self.logtext['mouse']
+		lines = s.split('\n')
+		if mouse_figures:
+			p = re.compile('  ([0-9A-Z]+) +([A-Z]{2})([ZNE]{1}).* (MOUSE detected.*)')
+			p1 = re.compile('  ([0-9A-Z]+) +([A-Z]{2})([ZNE]{1}).* (MOUSE suspected.*)')
+		if any(p1.match(lines[i]) for i in range(len(lines))):
+			out.write('<p>Strong signal at low frequencies found for these components, ignored for inversion: <br/>\n')
+		
+		for line in lines:
+			if mouse_figures:
+				m = p.match(line)
+				m1 = p1.match(line)
+				if m:
+					line = '  <a href="{fig:s}mouse_YES_{0:s}{comp:s}.png" data-lightbox="mouse">\n    {0:s} {1:s}{2:s}</a>: {3:s}'.format(*m.groups(), fig=mouse_figures, comp={'Z':'0', 'N':'1', 'E':'2'}[m.groups()[2]])
+			#out.write(line+'<br />\n')
+				if m1:
+				    line = '  <a href="{fig:s}mouse_YES_{0:s}{comp:s}.png" data-lightbox="mouse">\n    {0:s} {1:s}{2:s}</a>'.format(*m1.groups()[0:3], fig=mouse_figures, comp=m1.groups()[1]+m1.groups()[2])
+			out.write(line)#+'<br />\n')
+
 	if plot_maps:
 		out.write('\n\n<h3>Stability in space (top view)</h3>\n\n<div class="thumb tleft">\n')
 		k = plot_maps.rfind(".")
 		for z in self.grid.depths:
-			filename = plot_maps[:k] + "_{0:0>5.0f}".format(z) + plot_maps[k:]
-			out.write('  <a href="{0:s}" data-lightbox="map">\n    <img alt="" src="{0:s}" height="100" class="thumbimage" />\n  </a>\n'.format(filename))
-		out.write('  <div class="thumbcaption">\n    click to compare different depths\n  </div>\n</div>\n')
+			if z==C['z']:
+				filename = plot_maps[:k] + "_{0:0>5.0f}".format(z) + plot_maps[k:]
+				out.write('  <a href="{0:s}" data-lightbox="map">\n    <img alt="" src="{0:s}" height="100" class="thumbimage" />\n  </a>\n'.format(filename))
+		out.write('</div>\n</div>\n')#  <div class="thumbcaption">\n    click to compare different depths\n  </div>\n</div>\n')
 	if plot_slices:
 		k = plot_slices.rfind(".")
 		s1 = plot_slices[:k] + '_'
 		s2 = plot_slices[k:]
 		out.write('\n\n<h3>Stability in space (side view)</h3>\n\n<div class="thumb tleft">\n')
-		for slice in ('N-S', 'W-E', 'NW-SE', 'SW-NE'):
+		for slice in ('N-S', 'W-E'):#, 'NW-SE', 'SW-NE'):
 			out.write('  <a href="{0:s}" data-lightbox="slice">\n    <img alt="" src="{0:s}" height="150" class="thumbimage" />\n  </a>\n'.format(s1+slice+s2))
-		out.write('  <div class="thumbcaption">\n    click to compare different points of view\n  </div>\n</div>\n')
+		out.write('</div>\n')#  <div class="thumbcaption">\n    click to compare different points of view\n  </div>\n</div>\n')
+	
 	out.write('''
 
 <h2>Calculation parameters</h2>
@@ -594,11 +606,39 @@ def html_log(self, outfile='$outdir/index.html', reference=None, h1='ISOLA-ObsPy
   <dt>step</dt>
   <dd>{step:4.2f} s ({STEP:3d} samples)</dd>
 </dl>
+'''.format(
+	points = len(self.grid.grid), 
+	x = self.grid.step_x, 
+	z = self.grid.step_z, 
+	radius = self.grid.radius/1e3, 
+	dmin = self.grid.depth_min/1e3, 
+	dmax = self.grid.depth_max/1e3,
+	rlen = self.inp.rupture_length/1e3,
+	sn = self.grid.shift_min, 
+	Sn = self.grid.SHIFT_min, 
+	sx = self.grid.shift_max, 
+	Sx = self.grid.SHIFT_max, 
+	step = self.grid.shift_step, 
+	STEP = self.grid.SHIFT_step,
+))
+#read crustal model for output
+	crustfile= open(self.logtext['crust'],'r')
+	crusls=crustfile.readlines()
+	crustfile.close()
+	ncrdpt=int(crusls[2].split()[0])
+	crust=""
+	for i in range(ncrdpt):
+		crust=crust+"<tr><td>{0:.3f}</td><td>{1:.2f}</td><td>{2:.2f}</td><td>{3:.2f}</td><td>{4:.0f}</td><td>{5:.0f}</td>\n".format(*[float(x) for x in crusls[5+i].split()])
+
+	out.write('''
 
 <h3>Green's function calculation</h3>
 <dl>
-  <dt>Crustal model</dt>
-  <dd>{crust:s}</dd>
+  <dt>Crustal model</dt><dd>
+  <table>
+      <tr><th>depth of layer top(km) </th><th>Vp(km/s)</th><th>Vs(km/s)</th><th>Rho(g/cm**3)</th> <th>Qp </th> <th> Qs</th></tr>
+  {crust:s}
+  </table></dd>
   <dt>npts</dt>
   <dd>{npts_elemse:4d}</dd>
   <dt>tl</dt>
@@ -623,19 +663,6 @@ def html_log(self, outfile='$outdir/index.html', reference=None, h1='ISOLA-ObsPy
   <dd>{samprate:5.1f} Hz</dd>
 </dl>
 '''.format(
-	points = len(self.grid.grid), 
-	x = self.grid.step_x, 
-	z = self.grid.step_z, 
-	radius = self.grid.radius/1e3, 
-	dmin = self.grid.depth_min/1e3, 
-	dmax = self.grid.depth_max/1e3,
-	rlen = self.inp.rupture_length/1e3,
-	sn = self.grid.shift_min, 
-	Sn = self.grid.SHIFT_min, 
-	sx = self.grid.shift_max, 
-	Sx = self.grid.SHIFT_max, 
-	step = self.grid.shift_step, 
-	STEP = self.grid.SHIFT_step,
 	npts_elemse = self.data.npts_elemse, 
 	tl = self.data.tl, 
 	freq = self.data.freq, 
@@ -644,7 +671,7 @@ def html_log(self, outfile='$outdir/index.html', reference=None, h1='ISOLA-ObsPy
 	decimate = self.data.max_samprate / self.data.samprate, 
 	samprate = self.data.samprate, 
 	SAMPRATE = self.data.max_samprate,
-	crust = self.logtext['crust'],
+	crust = crust,#self.logtext['crust'],
 	stf_description = self.inp.stf_description
 ))
 
