@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
+from scipy import signal
 
 from BayesISOLA.helpers import decimate
 
@@ -37,7 +38,7 @@ def running_mean(x, N):
 	from math import floor
 	cumsum = np.cumsum(np.insert(x, 0, 0))
 	rm = (cumsum[N:] - cumsum[:-N])/N
-	Nzeros = floor(N/2)
+	Nzeros = int(np.floor(N/2))
 	rm = np.concatenate((np.zeros((Nzeros)), rm), axis=0)
 	rm = np.concatenate((rm, np.zeros((Nzeros))), axis=0)
 	return rm
@@ -174,6 +175,8 @@ def covariance_matrix_SACF(self, T = 15.0, taper = 0.0, save_non_inverted=False,
 	
 	:type save_non_inverted: bool, optional
 	:param save_non_inverted: If ``True``, save also non-inverted matrix, which can be plotted later.
+	
+	Author: Miroslav Hallo, http://geo.mff.cuni.cz/~hallo/
 	"""
 	from math import floor
 	from scipy import signal
@@ -232,7 +235,7 @@ def covariance_matrix_SACF(self, T = 15.0, taper = 0.0, save_non_inverted=False,
 						L1s = 2
 						#print('L1 changed to the minimum allowed value: 2 samples')
 					
-					ntp = floor(len(self.d.data_shifts)/2)
+					ntp = int(np.floor(len(self.d.data_shifts)/2))
 					f = g = np.array(self.d.data_shifts[ntp][r][i][0:nsampl]) # [time_shift][station][comp][sampl]
 					
 					#plt.figure(0)
@@ -280,7 +283,7 @@ def covariance_matrix_SACF(self, T = 15.0, taper = 0.0, save_non_inverted=False,
 						tap[k,k] = tw[k];
 					
 					# Fill the matrix
-					middle = floor(len(SACF)/2)
+					middle = int(np.floor(len(SACF)/2))
 					for k in range(nsampl):
 						for l in range(k, nsampl):
 							C[l+I, k+I] = C[k+I, l+I] = SACF[middle+k-l] * tap[k,l]
@@ -334,6 +337,8 @@ def covariance_matrix_ACF(self, save_non_inverted=False):
 	
 	:type save_non_inverted: bool, optional
 	:param save_non_inverted: If ``True``, save also non-inverted matrix, which can be plotted later.
+	
+	Author: Miroslav Hallo, http://geo.mff.cuni.cz/~hallo/
 	"""
 	self.log('\nCreating ACF covariance matrix')
 	self.log('station         \t L1 (sec)')
