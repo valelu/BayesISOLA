@@ -122,7 +122,7 @@ def load_hdf5(self,url,data,min_distance,max_distance,invert_Z_only,invert_BB_on
            for sta in stalist:
               taglist=ds.waveforms[sta].get_waveform_tags()
               for tag in taglist:
-                 print(sta,tag)
+                 #print(sta,tag)
                  if tag[-2:]=='cv': #it is converted data
                     tt=tag[:-2]+'mp'
                     try:

@@ -10,7 +10,7 @@ def load_asdf(self,file='query.h5',min_distance=None,max_distance=None,invert_Z_
 
     ds=pyasdf.ASDFDataSet(file) #read file
     #check and add event and stations xml
-    check_metadataset(ds)
+    check_metadataset(self,ds)
     #load all to inputs:
     extract_event(self,ds)
     extract_network_coordinates(self,ds,min_distance,max_distance,invert_Z_only,invert_BB_only)
