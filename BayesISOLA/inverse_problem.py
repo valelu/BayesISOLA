@@ -50,8 +50,8 @@ def invert(point_id, d_shifts, norm_d, Cd_inv, Cd_inv_shifts, nr, comps, station
 	:type decomp: bool, optional
 	:param invert_displacement: calculate L-2 difference between observed and modeled waveforms in displacement (if ``True``), otherwise compare it in velocity (default ``False``)
 	:type invert_displacement: bool, optional
-	:param elemse_path: path to elementary seismogram file
-	:type elemse_path: string, optional
+        :param elemse_path: path to elementary seismogram file
+        :type elemse_path: string, optional
 	:returns: Dictionary {'shift': order of `d_shift` item, 'a': coeficients of the elementary seismograms, 'VR': variance reduction, 'CN' condition number, and moment tensor decomposition (keys described at function :func:`decompose`)}
 	
 	It reads elementary seismograms for specified grid point, filter them and creates matrix :math:`G`.
@@ -69,8 +69,8 @@ def invert(point_id, d_shifts, norm_d, Cd_inv, Cd_inv_shifts, nr, comps, station
 	if elemse_path:
 		elemse = read_elemse_from_files(nr, elemse_path, stations, origin_time, samprate, npts_elemse, invert_displacement)
 	else:
-		elemse = read_elemse(nr, npts_elemse, 'green/elemse'+point_id+'.dat', stations, invert_displacement)
-	
+	    elemse = read_elemse(nr, npts_elemse, 'green/elemse'+point_id+'.dat', stations, invert_displacement)
+
 	# filtrovat elemse
 	for r in range(nr):
 		for i in range(ne):

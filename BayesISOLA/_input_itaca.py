@@ -4,22 +4,52 @@ import obspy
 from obspy.geodetics.base import gps2dist_azimuth
 from obspy.core import Stream,Stats,UTCDateTime,Trace
 
-def load_itaca(self,dir='./query/',min_distance=None,max_distance=None,invert_Z_only=False):
+def load_itaca(self,dir='./query/',min_distance=None,max_distance=None,invert_Z_only=False,invert_BB_only=False):
 #from obspy.core import Stream,Trace
-    print(dir)
+
+    #print(dir)
 #    dir=dir+"/query/"
     itadata=Stream()
+    dat1=Stream()
     for filename in os.listdir(dir):
         ff=dir+filename
         if os.path.isfile(ff):
          data1=dynaconvert(ff)
          for tr1 in data1:
-            itadata.append(tr1)
- 
+            dat1.append(tr1)
+    itadata=check_quality_ascii(dat1)
+#    print(len(dat1))
+#    print(len(itadata))
     extract_event(self,itadata)
-
-    extract_network_coordinates(self,itadata,min_distance,max_distance,invert_Z_only)
+    extract_network_coordinates(self,itadata,min_distance,max_distance,invert_Z_only,invert_BB_only)
     load_itadata(self,itadata)#Reading all data in given directory. Default dir=query
+
+def check_quality_ascii(data1):
+    itadata=Stream()
+    print(len(data1))
+    if any('manual' in data1[i].stats.dyna.PROCESSING for i in range(len(data1))):
+            print(len(data1))
+            for tr in data1:
+                sta=tr.stats.station
+                net=tr.stats.network
+                loc=tr.stats.location
+                chann=tr.stats.channel
+                proc=tr.stats.dyna.PROCESSING
+                if 'convert' in proc: #append if there is manual counterpart
+                    itr=[i for i in range(len(data1)) if sta==data1[i].stats.station and net==data1[i].stats.network and loc==data1[i].stats.location and chann==data1[i].stats.channel and 'manual' in data1[i].stats.dyna.PROCESSING]
+                    if len(itr)>1:
+                        raise ValueError('multiple data in downloaded file?')
+                    try: 
+                        itr=itr[0]
+                        tr1=data1.pop(itr)
+                        itadata.append(tr)
+                    except IndexError:
+                        pass
+    else:
+                print(len(data1))
+                itadata=data1
+    return(itadata)
+
 
 def extract_event(self,itadata):
 
@@ -56,10 +86,10 @@ def extract_event(self,itadata):
             magn.append(itadata[i].stats.dyna.MAGNITUDE_W)
             agency.append(itadata[i].stats.dyna.HYPOCENTER_REFERENCE)
     if(len(lat)>1):
-        print('Data from different events, using only first event!')
+        self.log('Data from different events, using only first event!')
     #convert to event info:
     itadat_sel=Stream()
-    for i in range(0,1):
+    for i in range(1):
         for k in range(len(itadata)):
             if (itadata[k].stats.dyna.EVENT_LATITUDE_DEGREE==lat[i] and \
             itadata[k].stats.dyna.EVENT_LONGITUDE_DEGREE==long[i] and\
@@ -85,6 +115,7 @@ def extract_event(self,itadata):
         m0=10**(self.event['mag']*3./2.+9.1)
         dur=10.**(0.31*math.log10(m0)-4.9) #Courboulex 2016 SRL not-sub
         self.set_source_time_function('triangle',dur)
+        self.rupture_duration=dur
 #this was replaced by new set_source_time_function
 #        gwd='green/'
 #       if not os.path.exists(gwd):
@@ -97,7 +128,7 @@ def extract_event(self,itadata):
 #        sf.close()
 
 
-def extract_network_coordinates(self,itadata,min_distance,max_distance,invert_Z_only):
+def extract_network_coordinates(self,itadata,min_distance,max_distance,invert_Z_only,invert_BB_only):
 #def extract_network_coordinates(itadata):
     nitadat=len(itadata)
     lat=[] ; long = [] ; stnid = [] ; netw = [] ; chann=[]; loc=[]
@@ -113,18 +144,22 @@ def extract_network_coordinates(self,itadata,min_distance,max_distance,invert_Z_
 #    az1.append(itadata[0].stats.dyna.EARTHQUAKE_BACKAZIMUTH_DEGREE)
     for i in range(1,nitadat):
         skip=False
-        for k in range(0,kmax):
+        for k in range(kmax):
             if (itadata[i].stats.dyna.STATION_LATITUDE_DEGREE==lat[k] and \
                 itadata[i].stats.dyna.STATION_LONGITUDE_DEGREE==long[k] and\
                 itadata[i].stats.station==stnid[k] and \
                 itadata[i].stats.location==loc[k] and \
-                itadata[i].stats.network==netw[k]):
-                skip=True
+                itadata[i].stats.network==netw[k] \
+                and itadata[i].stats.channel[0:2]==chann[k][0:2]):
+                skip=True #station is already in list
         if itadata[i].stats.starttime== toUTCDateTime('19700101_000000'):
-                print('Omitting station ',itadata[i].stats.station,' due to invalid timestamp')
-                skip=True
+                self.log('Omitting station '+itadata[i].stats.station+' due to invalid timestamp')
+                skip=True #station has invalid timestamp
+        if itadata[i].stats.channel[2] not in ['N','E','Z']:
+                self.log('Omitting invalid channel at station '+itadata[i].stats.station+' with channel info '+itadata[i].stats.channel)
+                skip=True #station has invalid channel code, only NEZ are accepted
         if not skip: 
-            kmax=kmax+1
+            kmax=kmax+1 #add station to list
             lat.append(itadata[i].stats.dyna.STATION_LATITUDE_DEGREE)
             long.append(itadata[i].stats.dyna.STATION_LONGITUDE_DEGREE)
             stnid.append(itadata[i].stats.station)
@@ -142,7 +177,7 @@ def extract_network_coordinates(self,itadata,min_distance,max_distance,invert_Z_
 
     stats=[]
  
-    for i in range(0,len(lat)):
+    for i in range(len(lat)):
         stn={'code':stnid[i],'lat':lat[i],'lon':long[i],'network':netw[i],\
              'location':loc[i],'channelcode':chann[i][0:2],'model':''}
         if obspy.__version__[0] == '0':
@@ -162,6 +197,8 @@ def extract_network_coordinates(self,itadata,min_distance,max_distance,invert_Z_
         else:
            stn['weightN'] = stn['weightE'] = 1.
         stn['weightZ'] = 1.
+        if invert_BB_only and not sts.channel[0:2]=="HH":
+                stn['weightN'] = stn['weightE'] = stn['weightZ']= 0.
         if dist > min_distance and dist < max_distance:   
 #        if dist1[i] > 0. and dist1[i] < 1000.:
             stats.append(stn)
@@ -170,13 +207,15 @@ def extract_network_coordinates(self,itadata,min_distance,max_distance,invert_Z_
 #    return stats
 ## number of stations:
     if len(stats) > 1000:
-        print('Warning: Number of stations > 1000. Using only first 1000 stations. If you need all of them, change nrp in param.inc and elemse.for in green function calculation and then return here and correct!')
+        self.log('Warning: Number of stations > 1000. Using only first 1000 stations. If you need all of them, change nrp in param.inc and elemse.for in green function calculation and then return here and correct!')
         stats = stats[0:999] # BECAUSE OF GREENS FUNCTIONS CALCULATION
-
+    if len(stats)==0:
+       raise Exception('no stations with valid data')
     self.stations=stats
 #these are external
     self.create_station_index()
     self.write_stations(filename='green/station.dat')
+
 
 def load_itadata(self,itadata):
 #def load_itadata(itada):
@@ -184,24 +223,30 @@ def load_itadata(self,itadata):
     stns=self.stations#extract_network_coordinates(itadata)
     nstats=len(stns)
 
-    for i in range(0,nstats):
+    for i in range(nstats):
         sta=stns[i]['code']
         lat=stns[i]['lat']
         long=stns[i]['lon']
-#    ch=stations[i]['channelcode']
+        ch=stns[i]['channelcode'][0:2]
+        loc=stns[i]['location']
         f={}
         for k in range(0,nitadat):
             if (itadata[k].stats.station==sta and \
                 itadata[k].stats.dyna.STATION_LATITUDE_DEGREE==lat and \
-                itadata[k].stats.dyna.STATION_LONGITUDE_DEGREE==long):
+                itadata[k].stats.dyna.STATION_LONGITUDE_DEGREE==long and \
+                itadata[k].stats.location==loc and \
+                itadata[k].stats.channel[0:2]==ch):
                 comp=itadata[k].stats.channel[2]
                 f[comp]=itadata[k]
                 if comp=='Z':
                     self.stations[i]['useZ']=True
+                    if stn['weightZ']==0.: stn['useZ']=False                    
                 elif comp=='N':
                     self.stations[i]['useN']=True
+                    if stn['weightN']==0.: stn['useN']=False                    
                 elif comp=='E':
                     self.stations[i]['useE']=True
+                    if stn['weightE']==0.: stn['useE']=False                    
                 if itadata[k].stats.dyna.UNITS=='cm/s^2':
                     f[comp].data=f[comp].data*1.e-2
                 if itadata[k].stats.dyna.DATA_TYPE=='ACCELERATION':
@@ -293,8 +338,9 @@ either expressed or implied, of the FreeBSD Project.
     
     headers = {}
 #    data = StringIO()
-        
+    
     fh = open(filename_in, 'rt')
+
     for i in range(64): 
         key, value = fh.readline().strip().split(':', 1)
         headers[key.strip()] = value.strip()

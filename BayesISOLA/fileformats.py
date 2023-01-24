@@ -66,7 +66,7 @@ def read_elemse(nr, npts, filename, stations, invert_displacement=False):
 	:param npts: number of points of each component
 	:type npts: integer
 	:param filename: path to the file
-	:type filename: string
+	:type filename: string, optional
 	:param stations: ``BayesISOLA.stations`` metadata of inverted stations
 	:type stations: list of dictionaries
 	:param invert_displacement: if `True`, integrate elementary seismograms to displacement, otherwise keep it in velocity

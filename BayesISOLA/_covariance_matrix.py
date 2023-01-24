@@ -35,6 +35,7 @@ def tukeywin(window_length, alpha=0.5):
     return w
 
 def running_mean(x, N):
+	from math import floor
 	cumsum = np.cumsum(np.insert(x, 0, 0))
 	rm = (cumsum[N:] - cumsum[:-N])/N
 	Nzeros = int(np.floor(N/2))
@@ -177,6 +178,8 @@ def covariance_matrix_SACF(self, T = 15.0, taper = 0.0, save_non_inverted=False,
 	
 	Author: Miroslav Hallo, http://geo.mff.cuni.cz/~hallo/
 	"""
+	from math import floor
+	from scipy import signal
 	self.log('\nCreating SACF covariance matrix')
 	self.log('signal duration {0:5.1f} sec'.format(T))
 	self.log('station         \t L1 (sec)')
@@ -192,10 +195,13 @@ def covariance_matrix_SACF(self, T = 15.0, taper = 0.0, save_non_inverted=False,
 		if sta['useE']: idx.append(2)
 		d_st_tmp = []
 		for i in idx:
-			ntp = int(np.floor(len(self.d.data_shifts)/2))
+			ntp = floor(len(self.d.data_shifts)/2)
 			perOfMax = 0.1 # percentage of data variance from maximum amp (* 100%)
 			d_st_tmp.append((perOfMax * max(abs(self.d.data_shifts[ntp][r][i][0:n])))**2) # data variance
-		d_st_tmp_max = max(d_st_tmp)
+		try:
+		    d_st_tmp_max = max(d_st_tmp)
+		except ValueError:
+		    d_st_tmp_max=0. #if station is not used in the inversion
 		d_variance.append(d_st_tmp_max)
 	d_var_max = max(d_variance)
 	
@@ -338,8 +344,8 @@ def covariance_matrix_ACF(self, save_non_inverted=False):
 	self.log('station         \t L1 (sec)')
 	n = self.d.npts_slice
 	
-	for shift in range(len(self.d_shifts)):
-		d_shift = self.d_shifts[shift]
+	for shift in range(len(self.d.d_shifts)):
+		d_shift = self.d.d_shifts[shift]
 		
 		# Get components variance
 		d_variance = []

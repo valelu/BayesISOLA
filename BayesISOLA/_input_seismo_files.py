@@ -283,7 +283,7 @@ def load_files(self, dir='.', prefix='', suffix='.sac', separator='.', pz_dir='.
 			else:
 				i += 1 # station not removed
 		else:
-			i += 1 # pz_dir = None and xml_dir = None
+		        i += 1 #pz_dir = None and xml_dir = None
 	self.check_a_station_present()
 	self.write_stations()
 

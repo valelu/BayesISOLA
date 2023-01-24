@@ -43,7 +43,10 @@ def VR_of_components(self, n=1):
 				self.inp.stations[sta][{0:'VR_Z', 1:'VR_N', 2:'VR_E'}[comp]] = None
 				continue
 			synt = SYNT[comp]
-			d = data[sta][comp][0:npts]
+			try:
+				d = data[sta][comp][0:npts]
+			except IndexError:
+				continue	
 			if self.cova.LT3:
 				d    = np.zeros(npts)
 				synt = np.zeros(npts)
@@ -59,7 +62,9 @@ def VR_of_components(self, n=1):
 			elif self.cova.Cd_inv:
 				d    = np.dot(self.cova.LT[sta][comp], d)
 				synt = np.dot(self.cova.LT[sta][comp], synt)
-				
+			elif self.cova.Cd_inv_shifts:
+				d=np.dot(self.cova.LT_shifts[self.centroid['shift_idx']][sta][comp],d)
+				synt=np.dot(self.cova.LT_shifts[self.centroid['shift_idx']][sta][comp],synt)
 			else:
 				pass
 			comps_used += 1
@@ -84,6 +89,41 @@ def VR_of_components(self, n=1):
 	return max_VR
 
 def write_VR_by_comp(self):
+    #calculate VR without matrix weighing:
+    npts = self.d.npts_slice
+    data = self.d.data_shifts[self.centroid['shift_idx']]
+    elemse = read_elemse(self.inp.nr, self.d.npts_elemse, 'green/elemse'+self.centroid['id']+'.dat', self.inp.stations, self.d.invert_displacement) # read elemse
+    for r in range(self.inp.nr):
+        for e in range(6):
+            my_filter(elemse[r][e], self.inp.stations[r]['fmin'], self.inp.stations[r]['fmax'])
+            elemse[r][e].trim(UTCDateTime(0)+self.d.elemse_start_origin)
+    MISFIT = 0
+    NORM_D = 0
+    COMPS_USED = 0
+    max_VR = -99
+    self.VRcomp = {}
+    for sta in range(self.inp.nr):
+        SYNT = {}
+        for comp in range(3):
+            SYNT[comp] = np.zeros(npts)
+            for e in range(6):
+                SYNT[comp] += elemse[sta][e][comp].data[0:npts] * self.centroid['a'][e,0]
+        comps_used = 0
+        for comp in range(3):
+            if not self.inp.stations[sta][{0:'useZ', 1:'useN', 2:'useE'}[comp]]:
+                self.inp.stations[sta][{0:'VR_Z', 1:'VR_N', 2:'VR_E'}[comp]] = None
+                continue
+            synt = SYNT[comp]
+            try:
+                    d = data[sta][comp][0:npts]
+                    comps_used += 1
+                    misfit = np.sum(np.square(d - synt))
+                    norm_d = np.sum(np.square(d))
+                    VR = 1 - misfit / norm_d
+            except IndexError:
+                    pass	
+            self.inp.stations[sta][{0:'VR_Z', 1:'VR_N', 2:'VR_E'}[comp]] = VR
+
      #recalculate distance
     for r in range(self.inp.nr):
         if obspy.__version__[0] == '0':
@@ -96,5 +136,6 @@ def write_VR_by_comp(self):
     wrf=open(self.inp.outdir+'/VR_by_comp.dat','w')
     wrf.write('Station \t distance \t VR_Z \t VR_N \t VR_E \n')
     for r in range(self.inp.nr):
+      if self.inp.stations[r]['VR_N'] and self.inp.stations[r]['VR_E'] and self.inp.stations[r]['VR_Z']:
         wrf.write('{0:s}:{1:s}  {2:10.1f}  {3:5.0f}%  {4:5.0f}%  {5:5.0f}% \n'.format(self.inp.stations[r]['network'],self.inp.stations[r]['code'],self.inp.stations[r]['dist2']/1000.,self.inp.stations[r]['VR_Z']*100,self.inp.stations[r]['VR_N']*100,self.inp.stations[r]['VR_E']*100))
     wrf.close()

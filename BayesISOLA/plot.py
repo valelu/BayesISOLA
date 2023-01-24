@@ -37,11 +37,12 @@ class plot:
 
 	from BayesISOLA._plot import plot_stations, plot_covariance_matrix
 	from BayesISOLA._plot_solution_summary import plot_MT, plot_uncertainty, plot_MT_uncertainty_centroid
-	from BayesISOLA._plot_solution_maps import plot_maps, plot_slices, plot_maps_sum, plot_map_backend, plot_3D
+	from BayesISOLA._plot_solution_maps2 import plot_maps, plot_slices, plot_maps_sum, plot_map_backend, plot_3D
 	from BayesISOLA._plot_data import plot_seismo, plot_covariance_function, plot_noise, plot_spectra, plot_seismo_backend_1, plot_seismo_backend_2
 	from BayesISOLA._html import html_log
+	from BayesISOLA._plot_pygmt import plot_stations_pygmt
 
-	def __init__(self, solution, maps=True, slices=True, maps_sum=True, MT=True, uncertainty=400, seismo=False, seismo_sharey=True, seismo_cova=True, noise=True, spectra=True, stations=True, covariance_matrix=True, covariance_function=False):
+	def __init__(self, solution, maps=True, slices=True, maps_sum=True, MT=True, uncertainty=400, seismo=False, seismo_sharey=True, seismo_cova=True, noise=True, spectra=True, stations=True, covariance_matrix=True, covariance_function=False,pygmt=False):
 		self.MT   = solution
 		self.grid = solution.g
 		self.data = solution.d
@@ -67,7 +68,7 @@ class plot:
 			self.plot_seismo()
 		if seismo_sharey:
 			self.plot_seismo(outfile='$outdir/seismo_sharey.png', sharey=True)
-		if seismo_cova and (len(self.cova.LT) or len(self.cova.LT3)):
+		if seismo_cova and (len(self.cova.LT) or len(self.cova.LT3) or len(self.cova.LT_shifts)):
 			self.plot_seismo(outfile='$outdir/seismo_cova.png', cholesky=True)
 		if noise:
 			self.plot_noise()
@@ -79,3 +80,5 @@ class plot:
 			self.plot_covariance_matrix()
 		if covariance_function:
 			self.plot_covariance_function()
+		if pygmt:
+		        self.plot_stations_pygmt()

@@ -34,31 +34,32 @@ def plot_maps(self, outfile='$outdir/map.png', beachball_size_c=False):
 	if beachball_size_c:
 		max_width = np.sqrt(self.MT.max_sum_c)
 	for z in self.grid.depths:
+	  if z==self.MT.centroid['z']:
 		# prepare data points
-		x=[]; y=[]; s=[]; CN=[]; MT=[]; color=[]; width=[]; highlight=[]
-		for gp in self.grid.grid:
-			if gp['z'] != z or gp['err']:
-				continue
-			x.append(gp['y']/1e3); y.append(gp['x']/1e3); s.append(gp['shift']); CN.append(gp['CN']) # NS is x coordinate, so switch it with y to be vertical
-			MT.append(a2mt(gp['a'], system='USE'))
-			VR = max(gp['VR'],0)
-			if beachball_size_c:
-				width.append(self.grid.step_x/1e3 * np.sqrt(gp['sum_c']) / max_width)
-			else:
-				width.append(self.grid.step_x/1e3*VR)
-			if self.MT.decompose:
-				dc = float(gp['dc_perc'])/100
-				color.append((dc, 0, 1-dc))
-			else:
-				color.append('black')
-			highlight.append(self.MT.centroid['id'] == gp['id'])
-		if outfile:
-			k = outfile.rfind(".")
-			filename = outfile[:k] + "_{0:0>5.0f}".format(z) + outfile[k:]
-		else:
-			filename = None
-		if len(x)>0 and len(y)>0:
-			self.plot_map_backend(x, y, s, CN, MT, color, width, highlight, -r, r, -r, r, xlabel='west - east [km]', ylabel='south - north [km]', title='depth {0:5.2f} km'.format(z/1000), beachball_size_c=beachball_size_c, outfile=filename)
+	  	x=[]; y=[]; s=[]; CN=[]; MT=[]; color=[]; width=[]; highlight=[]
+	  	for gp in self.grid.grid:
+	  		if gp['z'] != z or gp['err']:
+	  			continue
+	  		x.append(gp['y']/1e3); y.append(gp['x']/1e3); s.append(gp['shift']); CN.append(gp['CN']) # NS is x coordinate, so switch it with y to be vertical
+	  		MT.append(a2mt(gp['a'], system='USE'))
+	  		VR = max(gp['VR'],0)
+	  		if beachball_size_c:
+	  			width.append(self.grid.step_x/1e3 * np.sqrt(gp['sum_c']) / max_width)
+	  		else:
+	  			width.append(self.grid.step_x/1e3*VR)
+	  		if self.MT.decompose:
+	  			dc = float(gp['dc_perc'])/100
+	  			color.append((dc, 0, 1-dc))
+	  		else:
+	  			color.append('black')
+	  		highlight.append(self.MT.centroid['id'] == gp['id'])
+	  	if outfile:
+	  		k = outfile.rfind(".")
+	  		filename = outfile[:k] + "_{0:0>5.0f}".format(z) + outfile[k:]
+	  	else:
+	  		filename = None
+	  	if len(x)>0 and len(y)>0:
+	  		self.plot_map_backend(x, y, s, CN, MT, color, width, highlight, -r, r, -r, r, xlabel='west - east [km]', ylabel='south - north [km]', title='depth {0:5.2f} km'.format(z/1000), beachball_size_c=beachball_size_c, outfile=filename)
 
 def plot_slices(self, outfile='$outdir/slice.png', point=None, beachball_size_c=False):
 	"""
@@ -87,7 +88,7 @@ def plot_slices(self, outfile='$outdir/slice.png', point=None, beachball_size_c=
 	r = self.grid.radius * 1e-3 * 1.1 # to km, *1.1
 	if beachball_size_c:
 		max_width = np.sqrt(self.MT.max_sum_c)
-	for slice in ('N-S', 'W-E', 'NW-SE', 'SW-NE'):
+	for slice in ('N-S', 'W-E'): #,'NW-SE', 'SW-NE'):
 		x=[]; y=[]; s=[]; CN=[]; MT=[]; color=[]; width=[]; highlight=[]
 		for gp in self.grid.grid:
 			if   slice == 'N-S': X = -gp['x'];	Z = gp['y']-y0

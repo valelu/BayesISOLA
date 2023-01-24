@@ -6,7 +6,7 @@ import numpy as np
 
 from BayesISOLA.helpers import lcmm, next_power_of_2
 
-def set_frequencies(self, fmax, fmin=0., wavelengths=5):
+def set_frequencies(self, fmax, fmin=0., wavelengths=5,multichannel=False):
 	"""
 	Sets frequency range for each station according its distance.
 	
@@ -28,6 +28,39 @@ def set_frequencies(self, fmax, fmin=0., wavelengths=5):
 		stn['fmax'] = min(wavelengths * self.s_velocity / dist, fmax)
 		stn['fmin'] = fmin
 		self.fmax = max(self.fmax, stn['fmax'])
+	if multichannel:
+                    #if both BB and SM data are used, use fmin for BB and if fmin<0.05, use 0.05 as fmin for SM
+	        set_multichannel_freq(self,fmin)
+		    
+def set_multichannel_freq(self,fmin):
+        for stn in self.d.stations:
+            if fmin<0.05:
+                if stn['channelcode']=="HL" or stn['channelcode']=="HN" or stn['channelcode']=="HG":
+                    stn['fmin']=0.05
+                    self.log('Assuming fmin=0.05 at station '+stn['code']+' with channel '+stn['channelcode'])
+            if fmin<0.1 and stn['channelcode']=="EH":
+                    self.log('Assuming fmin=0.1 at station '+stn['code'],'with channel '+stn['channelcode'])
+                    stn['fmin']=0.1
+        #update stations:
+        data_upd=[]
+        stats_upd=[]
+        for st in self.d.data:
+          if (len(st)>0):
+            stats=st[0].stats
+            stn=self.d.stations_index['_'.join([stats.network,stats.station,stats.location,stats.channel[0:2]])]
+            fmin=stn['fmin']
+            fmax=stn['fmax']
+            if (fmin<fmax):
+#                stn['useN']=stn['useZ']=stn['useE']=False
+                data_upd.append(st)
+                stats_upd.append(stn)
+            else:
+                self.log('Station '+stats.station+'will not be used due to invalid frequency range ['+str(fmin)+','+str(fmax)+'].')
+        self.d.data=data_upd
+        self.d.stations=stats_upd
+        self.d.create_station_index()
+        self.d.write_stations(filename='green/station.dat')
+
 
 def set_working_sampling(self, multiple8=False):
 	"""
@@ -90,7 +123,7 @@ def count_components(self, log=True):
 		self.logtext['components'] = out
 		self.log(out, newline=False)
 
-def min_time(self, distance, mag=0):
+def min_time(self, distance, mag=0,allow_neg_tshift=False):
 	"""
 	Defines the beginning of inversion time window in seconds from location origin time. Save it into ``self.t_min`` (now save 0 -- FIXED OPTION)
 	
@@ -108,6 +141,11 @@ def min_time(self, distance, mag=0):
 	#self.t_min = t
 	v = self.velocity_ot_the_fastest_wave
 	self.t_min = 0		# FIXED OPTION, because Green's functions with beginning in non-zero time are nou implemented yet
+	if ('triangle' in self.d.stf_description):
+	    if allow_neg_tshift:
+	        self.t_min=-self.d.rupture_duration/2.
+	else:
+	     self.d.rupture_duration=0.
 
 def max_time(self, distance, mag=0):
 	"""
@@ -120,7 +158,7 @@ def max_time(self, distance, mag=0):
 	:param v: the last inverted wave-group characteristic velocity in m/s
 	:type v: float
 	"""
-	v = self.velocity_ot_the_slowest_wave
+	v=self.velocity_ot_the_slowest_wave
 	t = distance/v		# FIXED OPTION
 	self.t_max = t
 
@@ -146,7 +184,7 @@ def set_time_window(self):
 	else:
 		self.npts_exp = int(math.log(self.npts_elemse, 2))
 
-def set_parameters(self, fmax, fmin=0., wavelengths=5, min_depth=1000, log=True):
+def set_parameters(self, fmax, fmin=0., wavelengths=5, min_depth=1000,multichannel=False, log=True):
 	"""
 	Sets some technical parameters of the inversion.
 	
@@ -161,7 +199,7 @@ def set_parameters(self, fmax, fmin=0., wavelengths=5, min_depth=1000, log=True)
 	
 	The parameters are parameters of the same name of these functions.
 	"""
-	self.set_frequencies(fmax, fmin, wavelengths)
+	self.set_frequencies(fmax, fmin, wavelengths,multichannel)
 	self.set_working_sampling()
 	self.grid.set_grid(min_depth=min_depth) # must be after set_working_sampling
 	self.grid.set_time_grid(self.fmax, self.max_samprate)
