@@ -17,13 +17,14 @@ def load_asdf(self,file='query.h5',min_distance=None,max_distance=None,invert_Z_
     extract_data(self,ds)
 
 
-def check_metadataset(ds,tokenfile='token.txt'):
+
+def check_metadataset(self,ds,tokenfile='token.txt'):
     from pyasdf.exceptions import WaveformNotInFileException
     events=ds.events
     if len(events)==0:
         #extract query:
         qq=''
-        print('Header with event xml not found, downloading quake.ml from ESM.')
+        self.log('Header with event xml not found, downloading quake.ml from ESM.')
         for sta in ds.waveforms.list(): 
           #if not qq:
             for tag in ds.waveforms[sta].get_waveform_tags():
@@ -49,7 +50,7 @@ def check_metadataset(ds,tokenfile='token.txt'):
             staxml=sta.StationXML
         except AttributeError:
             noxml=True
-            print('XML info for station not found, downloading from ESM')
+            self.log('XML info for station not found, downloading from ESM')
             for tag in sta.get_waveform_tags():
               if noxml:
                 network=sta[tag][0].stats.network
@@ -66,8 +67,8 @@ def check_metadataset(ds,tokenfile='token.txt'):
                 os.remove('station.xml')
     #how to download only auxiliary data?
     #check MP presence
-    if any(['mp' in tag for tag in ds.waveform_tags]):
-           print('selecting data with MP counterpart')
+    if any(['mp' in tag[-2:] for tag in ds.waveform_tags]):
+           self.log('selecting data with MP counterpart')
         #data contains manually processed waveforms:
            stalist=ds.waveforms.list()
            for sta in stalist:

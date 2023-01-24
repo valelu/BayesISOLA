@@ -37,7 +37,7 @@ class plot:
 
 	from BayesISOLA._plot import plot_stations, plot_covariance_matrix
 	from BayesISOLA._plot_solution_summary import plot_MT, plot_uncertainty, plot_MT_uncertainty_centroid
-	from BayesISOLA._plot_solution_maps import plot_maps, plot_slices, plot_maps_sum, plot_map_backend, plot_3D
+	from BayesISOLA._plot_solution_maps2 import plot_maps, plot_slices, plot_maps_sum, plot_map_backend, plot_3D
 	from BayesISOLA._plot_data import plot_seismo, plot_covariance_function, plot_noise, plot_spectra, plot_seismo_backend_1, plot_seismo_backend_2
 	from BayesISOLA._html import html_log
 	from BayesISOLA._plot_pygmt import plot_stations_pygmt

@@ -77,8 +77,8 @@ def trim_ita_data(self, noise_slice=False, noise_starttime=None, noise_length=No
 		self.prefilter_data(st)
 		st.decimate(decimate, no_filter=True)
 		st.trim(starttime, endtime,pad=True,fill_value=0)
-#		print('Warning: allowing for zero fill value in trimming, check log for possible trim problems!')
 			#print(stats.station,stats.starttime,stats['endtime'],endtime)
+			#### !!!! Warning: allowing for zero fill value in trimming, check log for possible trim problems in skip_short_records2
 		# TODO: kontrola, jestli neorezavame mimo puvodni zaznam
 
 def prefilter_data(self, st):
@@ -154,26 +154,23 @@ def skip_short_records2(self, v0=1000.,check_start=False,noise=False):
 	:type noise: bool or float, optional
     """
     self.log('\nChecking record length:')
-    qq=False
     for st in self.d.data:
         for comp in range(len(st)):
             stats = st[comp].stats
             if check_start:
                 if stats.starttime > self.d.event['t'] + (self.t_min + self.grid.shift_min):
-                    self.log('  ' + stats.station + ' ' + stats.channel + ': record too soon, ignoring component in inversion')
+                    self.log('  ' + stats.station + ' ' + stats.channel + ': record too late, ignoring component in inversion')
                     self.d.stations_index['_'.join([stats.network, stats.station, stats.location, stats.channel[0:2]])]['use'+stats.channel[2]] = False
             #use distance/v for each station to estimate the assumed record length
             dst=self.d.stations_index['_'.join([stats.network, stats.station, stats.location, stats.channel[0:2]])]['dist']
-            tmax=np.sqrt(dst**2+self.grid.depth_max**2)/v0*0.8
-            if stats.endtime < self.d.event['t'] + (tmax + self.grid.shift_max):
+            tmax=np.sqrt(dst**2+self.grid.depth_max**2)/v0#*0.8
+            if stats.endtime < self.d.event['t'] + (tmax*.7): #+ self.grid.shift_min):
                     self.log('  ' + stats.station + ' ' + stats.channel + ': record too short, ignoring component in inversion')
                     self.d.stations_index['_'.join([stats.network, stats.station, stats.location, stats.channel[0:2]])]['use'+stats.channel[2]] = False
-	    #check the record whether it will be trimmed correctly 
-            endtime = self.d.event['t']+tmax/0.8+ self.grid.shift_max + 10
+            endtime = self.d.event['t']+tmax+ self.grid.shift_max + 10                    
             if stats.starttime>endtime:
                     self.d.stations_index['_'.join([stats.network, stats.station, stats.location, stats.channel[0:2]])]['use'+stats.channel[2]] = False
-                    self.log('  ' + stats.station + ' ' + stats.channel + ': record too late and will be trimmed completely')
-                    qq=True
+                    self.log('  ' + stats.station + ' ' + stats.channel + ': record too late and will be trimmed completely, probably check with the data provider')
             if noise:
                 if type(noise) in (float,int):
                     noise_len = noise
@@ -183,10 +180,6 @@ def skip_short_records2(self, v0=1000.,check_start=False,noise=False):
                 if stats.starttime > self.d.event['t'] - noise_len:
                     self.log('  ' + stats.station + ' ' + stats.channel + ': record too short for noise covariance, ignoring component in inversion')
                     self.d.stations_index['_'.join([stats.network, stats.station, stats.location, stats.channel[0:2]])]['use'+stats.channel[2]] = False
-    if qq:
-        print('Nejaky blazon to tu poorezaval az moc divne...Check log and contact your data provider')
-#        quit()
-
 
 def write_stainfo(self):
         import os
